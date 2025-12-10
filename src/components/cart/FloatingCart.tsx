@@ -13,19 +13,38 @@ export function FloatingCart() {
   const {
     items,
     isOpen,
+    openCart,
     closeCart,
     removeItem,
     updateQuantity,
     getTotal,
+    getItemCount,
     clearCart,
   } = useCartStore();
 
   const total = getTotal();
+  const itemCount = getItemCount();
   const progress = Math.min((total / MINIMUM_ORDER_AMOUNT) * 100, 100);
   const canCheckout = total >= MINIMUM_ORDER_AMOUNT;
 
   return (
-    <AnimatePresence>
+    <>
+      {/* Mobile Floating Cart Button */}
+      <motion.button
+        onClick={openCart}
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        className="md:hidden fixed bottom-6 right-6 z-40 w-16 h-16 bg-coffee-500 text-white rounded-full shadow-lg shadow-coffee-500/30 flex items-center justify-center"
+      >
+        <ShoppingBag className="w-6 h-6" />
+        {itemCount > 0 && (
+          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-6 h-6 rounded-full flex items-center justify-center font-bold">
+            {itemCount > 99 ? '99+' : itemCount}
+          </span>
+        )}
+      </motion.button>
+
+      <AnimatePresence>
       {isOpen && (
         <>
           {/* Backdrop */}
@@ -206,5 +225,6 @@ export function FloatingCart() {
         </>
       )}
     </AnimatePresence>
+    </>
   );
 }

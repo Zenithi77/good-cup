@@ -151,7 +151,7 @@ export default function HomePage() {
                         {product.name}
                       </h4>
                       <p className="text-coffee-500 font-bold text-sm">
-                        {product.price?.toLocaleString()}₮
+                        {product.sizes?.[0]?.price?.toLocaleString()}₮
                       </p>
                     </div>
                     <ArrowRight className="w-4 h-4 text-coffee-400 group-hover:text-coffee-600 group-hover:translate-x-1 transition-all" />
