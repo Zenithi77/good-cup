@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowRight, Coffee, Truck, Shield, Headphones, ChevronLeft, ChevronRight } from 'lucide-react';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Product } from '@/types';
 import { ProductCard, CategoryFilter } from '@/components/product';
@@ -40,11 +40,17 @@ export default function HomePage() {
 
   const fetchBanner = useCallback(async () => {
     try {
-      const settingsRef = collection(db, 'settings');
-      const q = query(settingsRef, where('key', '==', 'banner_url'));
-      const snapshot = await getDocs(q);
-      if (!snapshot.empty) {
-        setBannerUrl(snapshot.docs[0].data().value);
+      const settingsDoc = await getDocs(collection(db, 'settings'));
+      // Check for 'site' document first (admin settings format)
+      const siteDoc = settingsDoc.docs.find(doc => doc.id === 'site');
+      if (siteDoc && siteDoc.data().bannerImage) {
+        setBannerUrl(siteDoc.data().bannerImage);
+        return;
+      }
+      // Fallback to old format with key-value
+      const bannerDoc = settingsDoc.docs.find(doc => doc.data().key === 'banner_url');
+      if (bannerDoc) {
+        setBannerUrl(bannerDoc.data().value);
       }
     } catch {
       console.error('Error fetching banner');
@@ -84,10 +90,10 @@ export default function HomePage() {
       {/* Hero Section - Banner + Featured Products Side by Side */}
       <section className="py-6 md:py-10">
         <div className="container mx-auto px-4">
-          {/* Desktop: Side by side layout */}
-          <div className="hidden md:grid md:grid-cols-3 gap-6">
-            {/* Banner - Takes 2 columns */}
-            <div className="col-span-2 relative h-[400px] rounded-2xl overflow-hidden group">
+          {/* Desktop: Side by side layout - Banner left, Featured Products right */}
+          <div className="hidden md:grid md:grid-cols-2 gap-6">
+            {/* Banner - Takes 1 column */}
+            <div className="relative h-[500px] rounded-2xl overflow-hidden group">
               {bannerUrl ? (
                 <Image
                   src={bannerUrl}
@@ -122,47 +128,19 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Featured Products - Takes 1 column */}
-            <div className="space-y-4">
-              <h3 className="font-semibold text-coffee-800 text-lg">Онцлох бараа</h3>
-              <div className="space-y-3 max-h-[360px] overflow-y-auto pr-2 scrollbar-thin">
+            {/* Featured Products - Takes 1 column with 2x2 grid */}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-coffee-800 text-lg">Онцлох бараа</h3>
+                <Link href="/products" className="text-coffee-500 hover:text-coffee-600 text-sm flex items-center gap-1">
+                  Бүгдийг үзэх <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
                 {featuredProducts.slice(0, 4).map((product) => (
-                  <Link
-                    key={product.id}
-                    href={`/product/${product.id}`}
-                    className="flex items-center gap-3 p-3 bg-coffee-50 rounded-xl hover:bg-coffee-100 transition-colors group"
-                  >
-                    <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
-                      {product.imageUrl ? (
-                        <Image
-                          src={product.imageUrl}
-                          alt={product.name}
-                          fill
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-coffee-200 flex items-center justify-center">
-                          <Coffee className="w-6 h-6 text-coffee-400" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-coffee-800 text-sm truncate group-hover:text-coffee-600">
-                        {product.name}
-                      </h4>
-                      <p className="text-coffee-500 font-bold text-sm">
-                        {product.sizes?.[0]?.price?.toLocaleString()}₮
-                      </p>
-                    </div>
-                    <ArrowRight className="w-4 h-4 text-coffee-400 group-hover:text-coffee-600 group-hover:translate-x-1 transition-all" />
-                  </Link>
+                  <ProductCard key={product.id} product={product} />
                 ))}
               </div>
-              <Link href="/products" className="block">
-                <Button variant="outline" className="w-full">
-                  Бүгдийг үзэх
-                </Button>
-              </Link>
             </div>
           </div>
 

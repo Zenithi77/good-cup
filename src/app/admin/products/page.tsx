@@ -17,9 +17,9 @@ import toast from 'react-hot-toast';
 interface FormProduct {
   name: string;
   category: string;
-  sizes: { size: string; price: number }[];
-  stock: number;
-  packageQty: number;
+  sizes: { size: string; price: string }[];
+  stock: string;
+  packageQty: string;
   description: string;
   imageUrl: string;
   badge: string;
@@ -29,9 +29,9 @@ interface FormProduct {
 const emptyProduct: FormProduct = {
   name: '',
   category: 'double-wall-cup',
-  sizes: [{ size: '8oz', price: 0 }],
-  stock: 100,
-  packageQty: 50,
+  sizes: [{ size: '8oz', price: '' }],
+  stock: '100',
+  packageQty: '50',
   description: '',
   imageUrl: '',
   badge: '',
@@ -112,7 +112,7 @@ export default function AdminProductsPage() {
   const handleAddSize = () => {
     setFormData(prev => ({
       ...prev,
-      sizes: [...prev.sizes, { size: '8oz' as const, price: 0 }]
+      sizes: [...prev.sizes, { size: '8oz', price: '' }]
     }));
   };
 
@@ -123,11 +123,11 @@ export default function AdminProductsPage() {
     }));
   };
 
-  const handleSizeChange = (index: number, field: 'size' | 'price', value: string | number) => {
+  const handleSizeChange = (index: number, field: 'size' | 'price', value: string) => {
     setFormData(prev => ({
       ...prev,
       sizes: prev.sizes.map((s, i) => 
-        i === index ? { ...s, [field]: field === 'price' ? Number(value) : value } : s
+        i === index ? { ...s, [field]: value } : s
       )
     }));
   };
@@ -143,7 +143,15 @@ export default function AdminProductsPage() {
     setSaving(true);
     try {
       const productData = {
-        ...formData,
+        name: formData.name,
+        category: formData.category,
+        sizes: formData.sizes.map(s => ({ size: s.size, price: Number(s.price) || 0 })),
+        stock: Number(formData.stock) || 0,
+        packageQty: Number(formData.packageQty) || 0,
+        description: formData.description,
+        imageUrl: formData.imageUrl,
+        badge: formData.badge,
+        featured: formData.featured,
         updatedAt: new Date(),
       };
 
@@ -174,9 +182,9 @@ export default function AdminProductsPage() {
     setFormData({
       name: product.name,
       category: product.category,
-      sizes: product.sizes,
-      stock: product.stock,
-      packageQty: product.packageQty,
+      sizes: product.sizes.map(s => ({ size: s.size, price: String(s.price) })),
+      stock: String(product.stock),
+      packageQty: String(product.packageQty),
       description: product.description,
       imageUrl: product.imageUrl,
       badge: product.badge || '',
@@ -403,9 +411,10 @@ export default function AdminProductsPage() {
                     className="w-24"
                   />
                   <Input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     value={size.price}
-                    onChange={(e) => handleSizeChange(index, 'price', e.target.value)}
+                    onChange={(e) => handleSizeChange(index, 'price', e.target.value.replace(/[^0-9]/g, ''))}
                     placeholder="Үнэ"
                     className="flex-1"
                   />
@@ -434,15 +443,17 @@ export default function AdminProductsPage() {
           <div className="grid grid-cols-2 gap-4">
             <Input
               label="Нөөц"
-              type="number"
+              type="text"
+              inputMode="numeric"
               value={formData.stock}
-              onChange={(e) => setFormData(prev => ({ ...prev, stock: Number(e.target.value) }))}
+              onChange={(e) => setFormData(prev => ({ ...prev, stock: e.target.value.replace(/[^0-9]/g, '') }))}
             />
             <Input
               label="Багцын тоо"
-              type="number"
+              type="text"
+              inputMode="numeric"
               value={formData.packageQty}
-              onChange={(e) => setFormData(prev => ({ ...prev, packageQty: Number(e.target.value) }))}
+              onChange={(e) => setFormData(prev => ({ ...prev, packageQty: e.target.value.replace(/[^0-9]/g, '') }))}
             />
           </div>
 
