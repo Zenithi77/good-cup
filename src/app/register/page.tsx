@@ -70,7 +70,7 @@ export default function RegisterPage() {
     <div className="min-h-screen flex">
       {/* Left Side - Image/Brand */}
       <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-coffee-600 via-coffee-700 to-coffee-800">
-        <div className="absolute inset-0 bg-[url('/coffee-pattern.png')] opacity-10" />
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.3) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
         <div className="relative z-10 flex flex-col justify-center items-center w-full p-12 text-white">
           <motion.div
             initial={{ opacity: 0, y: 20 }}

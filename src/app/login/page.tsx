@@ -39,7 +39,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex">
       {/* Left Side - Image/Brand */}
       <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-coffee-500 via-coffee-600 to-coffee-700">
-        <div className="absolute inset-0 bg-[url('/coffee-pattern.png')] opacity-10" />
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.3) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
         <div className="relative z-10 flex flex-col justify-center items-center w-full p-12 text-white">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -151,14 +151,11 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-start">
               <label className="flex items-center">
                 <input type="checkbox" className="w-4 h-4 rounded border-coffee-300 text-coffee-500 focus:ring-coffee-500" />
                 <span className="ml-2 text-sm text-coffee-600">Намайг сана</span>
               </label>
-              <Link href="/forgot-password" className="text-sm text-coffee-500 hover:text-coffee-600 font-medium">
-                Нууц үг мартсан?
-              </Link>
             </div>
 
             {error && (
