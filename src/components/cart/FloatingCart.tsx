@@ -29,12 +29,12 @@ export function FloatingCart() {
 
   return (
     <>
-      {/* Mobile Floating Cart Button */}
+      {/* Mobile Floating Cart Button - higher position to avoid sticky footer on product pages */}
       <motion.button
         onClick={openCart}
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
-        className="md:hidden fixed bottom-6 right-6 z-40 w-16 h-16 bg-coffee-500 text-white rounded-full shadow-lg shadow-coffee-500/30 flex items-center justify-center"
+        className="md:hidden fixed bottom-24 right-4 z-40 w-14 h-14 bg-coffee-500 text-white rounded-full shadow-lg shadow-coffee-500/30 flex items-center justify-center"
       >
         <ShoppingBag className="w-6 h-6" />
         {itemCount > 0 && (
