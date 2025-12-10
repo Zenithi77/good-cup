@@ -1,26 +1,96 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
+/* Coffee Theme Colors - Very Light Bronze */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  /* Super light bronze-based palette */
+  --color-coffee-50: #ffffff;
+  --color-coffee-100: #fffefb;
+  --color-coffee-200: #fef9f2;
+  --color-coffee-300: #faf0e3;
+  --color-coffee-400: #f0ddc4;
+  --color-coffee-500: #CD7F32;
+  --color-coffee-600: #b86e28;
+  --color-coffee-700: #9a5a20;
+  --color-coffee-800: #7a471a;
+  --color-coffee-900: #5c3515;
+  --color-coffee-950: #3d2310;
+  
+  /* Font family */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  --background: #ffffff;
+  --foreground: #3d2310;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #CD7F32 #faf0e3;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: #faf0e3;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #CD7F32;
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #b86e28;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+}
+
+/* Toast customization */
+.toast-container {
+  --toaster-offset: 16px;
+}
+
+/* Custom animations */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Selection color */
+::selection {
+  background: #8b5e3c;
+  color: #ffffff;
 }

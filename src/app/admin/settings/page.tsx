@@ -1,0 +1,308 @@
+'use client';
+
+import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import Image from 'next/image';
+import { Upload, Loader2, Trash2, Save, ImageIcon } from 'lucide-react';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { useAuthStore } from '@/store/authStore';
+import { Button, Input } from '@/components/ui';
+import toast from 'react-hot-toast';
+
+interface SiteSettings {
+  bannerImage: string;
+  bannerTitle: string;
+  bannerSubtitle: string;
+  minimumOrderAmount: number;
+  deliveryFee: number;
+  freeDeliveryMinimum: number;
+  contactPhone: string;
+  contactEmail: string;
+  facebookUrl: string;
+  instagramUrl: string;
+}
+
+const defaultSettings: SiteSettings = {
+  bannerImage: '',
+  bannerTitle: 'GOOD CUP',
+  bannerSubtitle: 'Чанартай таг аяга, савны төрөлжсөн дэлгүүр',
+  minimumOrderAmount: 200000,
+  deliveryFee: 5000,
+  freeDeliveryMinimum: 300000,
+  contactPhone: '',
+  contactEmail: '',
+  facebookUrl: '',
+  instagramUrl: '',
+};
+
+export default function AdminSettingsPage() {
+  const router = useRouter();
+  const { isAdmin, loading } = useAuthStore();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const [settings, setSettings] = useState<SiteSettings>(defaultSettings);
+  const [loadingSettings, setLoadingSettings] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
+  useEffect(() => {
+    if (!loading && !isAdmin) {
+      router.push('/');
+    }
+  }, [loading, isAdmin, router]);
+
+  useEffect(() => {
+    if (isAdmin) {
+      fetchSettings();
+    }
+  }, [isAdmin]);
+
+  const fetchSettings = async () => {
+    try {
+      const settingsDoc = await getDoc(doc(db, 'settings', 'site'));
+      if (settingsDoc.exists()) {
+        setSettings({ ...defaultSettings, ...settingsDoc.data() as SiteSettings });
+      }
+      setLoadingSettings(false);
+    } catch (error) {
+      console.error('Error fetching settings:', error);
+      setLoadingSettings(false);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Зөвхөн зураг оруулна уу');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Зураг 5MB-аас бага байх ёстой');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+
+      const data = await response.json();
+      setSettings(prev => ({ ...prev, bannerImage: data.url }));
+      toast.success('Зураг амжилттай орууллаа');
+    } catch {
+      toast.error('Зураг оруулахад алдаа гарлаа');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const removeBannerImage = () => {
+    setSettings(prev => ({ ...prev, bannerImage: '' }));
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await setDoc(doc(db, 'settings', 'site'), {
+        ...settings,
+        updatedAt: new Date(),
+      });
+      toast.success('Тохиргоо хадгалагдлаа');
+    } catch {
+      toast.error('Хадгалахад алдаа гарлаа');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading || !isAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-coffee-500"></div>
+      </div>
+    );
+  }
+
+  if (loadingSettings) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-coffee-500" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen py-8">
+      <div className="container mx-auto px-4 max-w-3xl">
+        <div className="mb-8">
+          <h1 className="text-2xl md:text-3xl font-bold text-coffee-100">
+            Тохиргоо
+          </h1>
+          <p className="text-coffee-400">
+            Сайтын үндсэн тохиргоо
+          </p>
+        </div>
+
+        <div className="space-y-8">
+          {/* Banner Settings */}
+          <div className="bg-coffee-900 rounded-xl border border-coffee-800 p-6">
+            <h2 className="text-lg font-semibold text-coffee-100 mb-4">Banner зураг</h2>
+            
+            <div className="space-y-4">
+              {settings.bannerImage ? (
+                <div className="relative aspect-[3/1] rounded-xl overflow-hidden bg-coffee-800">
+                  <Image
+                    src={settings.bannerImage}
+                    alt="Banner"
+                    fill
+                    className="object-cover"
+                  />
+                  <button
+                    onClick={removeBannerImage}
+                    className="absolute top-2 right-2 p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="aspect-[3/1] rounded-xl border-2 border-dashed border-coffee-700 hover:border-coffee-500 transition-colors cursor-pointer flex flex-col items-center justify-center bg-coffee-800/50"
+                >
+                  {uploading ? (
+                    <Loader2 className="w-8 h-8 animate-spin text-coffee-500" />
+                  ) : (
+                    <>
+                      <ImageIcon className="w-12 h-12 text-coffee-500 mb-2" />
+                      <p className="text-coffee-400">Banner зураг оруулах</p>
+                      <p className="text-coffee-500 text-sm">PNG, JPG (Хамгийн ихдээ 5MB)</p>
+                    </>
+                  )}
+                </div>
+              )}
+              
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+              
+              {settings.bannerImage && (
+                <Button
+                  onClick={() => fileInputRef.current?.click()}
+                  variant="outline"
+                  disabled={uploading}
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Зураг солих
+                </Button>
+              )}
+            </div>
+            
+            <div className="mt-4 space-y-4">
+              <Input
+                label="Banner гарчиг"
+                value={settings.bannerTitle}
+                onChange={(e) => setSettings(prev => ({ ...prev, bannerTitle: e.target.value }))}
+              />
+              <Input
+                label="Banner тайлбар"
+                value={settings.bannerSubtitle}
+                onChange={(e) => setSettings(prev => ({ ...prev, bannerSubtitle: e.target.value }))}
+              />
+            </div>
+          </div>
+
+          {/* Order Settings */}
+          <div className="bg-coffee-900 rounded-xl border border-coffee-800 p-6">
+            <h2 className="text-lg font-semibold text-coffee-100 mb-4">Захиалгын тохиргоо</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                label="Хамгийн бага захиалга (₮)"
+                type="number"
+                value={settings.minimumOrderAmount}
+                onChange={(e) => setSettings(prev => ({ ...prev, minimumOrderAmount: Number(e.target.value) }))}
+              />
+              <Input
+                label="Хүргэлтийн төлбөр (₮)"
+                type="number"
+                value={settings.deliveryFee}
+                onChange={(e) => setSettings(prev => ({ ...prev, deliveryFee: Number(e.target.value) }))}
+              />
+              <Input
+                label="Үнэгүй хүргэлтийн доод хэмжээ (₮)"
+                type="number"
+                value={settings.freeDeliveryMinimum}
+                onChange={(e) => setSettings(prev => ({ ...prev, freeDeliveryMinimum: Number(e.target.value) }))}
+              />
+            </div>
+          </div>
+
+          {/* Contact Settings */}
+          <div className="bg-coffee-900 rounded-xl border border-coffee-800 p-6">
+            <h2 className="text-lg font-semibold text-coffee-100 mb-4">Холбоо барих</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                label="Утасны дугаар"
+                value={settings.contactPhone}
+                onChange={(e) => setSettings(prev => ({ ...prev, contactPhone: e.target.value }))}
+                placeholder="99001122"
+              />
+              <Input
+                label="И-мэйл хаяг"
+                type="email"
+                value={settings.contactEmail}
+                onChange={(e) => setSettings(prev => ({ ...prev, contactEmail: e.target.value }))}
+                placeholder="info@goodcup.mn"
+              />
+              <Input
+                label="Facebook холбоос"
+                value={settings.facebookUrl}
+                onChange={(e) => setSettings(prev => ({ ...prev, facebookUrl: e.target.value }))}
+                placeholder="https://facebook.com/goodcup"
+              />
+              <Input
+                label="Instagram холбоос"
+                value={settings.instagramUrl}
+                onChange={(e) => setSettings(prev => ({ ...prev, instagramUrl: e.target.value }))}
+                placeholder="https://instagram.com/goodcup"
+              />
+            </div>
+          </div>
+
+          {/* Save Button */}
+          <div className="flex justify-end">
+            <Button onClick={handleSave} disabled={saving} size="lg">
+              {saving ? (
+                <Loader2 className="w-5 h-5 animate-spin mr-2" />
+              ) : (
+                <Save className="w-5 h-5 mr-2" />
+              )}
+              Хадгалах
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
