@@ -133,9 +133,9 @@ export default function HomePage() {
                     className="flex items-center gap-3 p-3 bg-coffee-50 rounded-xl hover:bg-coffee-100 transition-colors group"
                   >
                     <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
-                      {product.images?.[0] ? (
+                      {product.imageUrl ? (
                         <Image
-                          src={product.images[0]}
+                          src={product.imageUrl}
                           alt={product.name}
                           fill
                           className="object-cover"
