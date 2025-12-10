@@ -90,10 +90,10 @@ export default function HomePage() {
       {/* Hero Section - Banner + Featured Products Side by Side */}
       <section className="py-6 md:py-10">
         <div className="container mx-auto px-4">
-          {/* Desktop: Side by side layout - Banner left, Featured Products right */}
-          <div className="hidden md:grid md:grid-cols-2 gap-6">
-            {/* Banner - Takes 1 column */}
-            <div className="relative h-[500px] rounded-2xl overflow-hidden group">
+          {/* Desktop Layout */}
+          <div className="hidden md:block space-y-6">
+            {/* Top Row: Banner (full width) */}
+            <div className="relative h-[350px] lg:h-[400px] rounded-2xl overflow-hidden group">
               {bannerUrl ? (
                 <Image
                   src={bannerUrl}
@@ -105,38 +105,37 @@ export default function HomePage() {
               ) : (
                 <div className="absolute inset-0 bg-gradient-to-br from-coffee-400 via-coffee-500 to-coffee-600" />
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-coffee-800/80 via-transparent to-transparent" />
-              
-              <div className="absolute bottom-0 left-0 right-0 p-8">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                >
-                  <h1 className="text-3xl lg:text-4xl font-bold text-white mb-3">
-                    Чанартай <span className="text-coffee-200">цаасан аяга</span>
-                  </h1>
-                  <p className="text-coffee-100 mb-4 max-w-lg">
-                    Кафе, ресторанд зориулсан бүтээгдэхүүн
-                  </p>
-                  <Link href="/products">
-                    <Button size="lg" className="group">
-                      Бүтээгдэхүүн үзэх
-                      <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                    </Button>
-                  </Link>
-                </motion.div>
-              </div>
             </div>
 
-            {/* Featured Products - Takes 1 column with 2x2 grid */}
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-coffee-800 text-lg">Онцлох бараа</h3>
-                <Link href="/products" className="text-coffee-500 hover:text-coffee-600 text-sm flex items-center gap-1">
-                  Бүгдийг үзэх <ArrowRight className="w-4 h-4" />
+            {/* Text & Button below banner */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center"
+            >
+              <h1 className="text-3xl lg:text-4xl font-bold text-coffee-800 mb-3">
+                Чанартай <span className="text-coffee-500">цаасан аяга</span>
+              </h1>
+              <p className="text-coffee-600 mb-4 max-w-lg mx-auto">
+                Кафе, ресторанд зориулсан бүтээгдэхүүн
+              </p>
+              <Link href="/products">
+                <Button size="lg" className="group">
+                  Бүтээгдэхүүн үзэх
+                  <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </Link>
+            </motion.div>
+
+            {/* Featured Products Section */}
+            <div className="pt-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="font-bold text-coffee-800 text-2xl">Онцлох бараа</h3>
+                <Link href="/products" className="text-coffee-500 hover:text-coffee-600 flex items-center gap-1 font-medium">
+                  Бүгдийг үзэх <ArrowRight className="w-5 h-5" />
                 </Link>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                 {featuredProducts.slice(0, 4).map((product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}
