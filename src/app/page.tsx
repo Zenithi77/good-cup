@@ -18,7 +18,6 @@ export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState<CategoryId | 'all'>('all');
   const [loading, setLoading] = useState(true);
   const [bannerUrl, setBannerUrl] = useState<string>('');
-  const [currentSlide, setCurrentSlide] = useState(0);
 
   const fetchProducts = useCallback(async () => {
     try {
@@ -62,15 +61,6 @@ export default function HomePage() {
     fetchBanner();
   }, [fetchProducts, fetchBanner]);
 
-  // Auto slide for mobile
-  useEffect(() => {
-    if (featuredProducts.length <= 1) return;
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % featuredProducts.length);
-    }, 4000);
-    return () => clearInterval(timer);
-  }, [featuredProducts.length]);
-
   const filteredProducts = selectedCategory === 'all'
     ? products
     : products.filter(p => p.category === selectedCategory);
@@ -84,139 +74,71 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen">
-      {/* Mobile: Banner + Featured Product Side by Side */}
-      <section className="md:hidden">
-        <div className="grid grid-cols-2 h-[50vh]">
-          {/* Banner Left */}
-          <div className="relative">
-            {bannerUrl ? (
-              <Image
-                src={bannerUrl}
-                alt="Good Cup Banner"
-                fill
-                className="object-cover"
-                priority
-              />
-            ) : (
-              <div className="absolute inset-0 bg-gradient-to-br from-coffee-400 via-coffee-500 to-coffee-600" />
-            )}
-          </div>
-          
-          {/* Featured Product Right */}
-          <div className="relative bg-white">
-            {featuredProducts[currentSlide] && (
-              <Link href={`/product/${featuredProducts[currentSlide].id}`} className="block h-full">
-                <div className="relative h-full">
-                  {featuredProducts[currentSlide].imageUrl ? (
-                    <Image
-                      src={featuredProducts[currentSlide].imageUrl}
-                      alt={featuredProducts[currentSlide].name}
-                      fill
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="absolute inset-0 bg-coffee-100 flex items-center justify-center">
-                      <Coffee className="w-12 h-12 text-coffee-300" />
-                    </div>
-                  )}
-                  {/* Product Info Overlay */}
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
-                    <p className="text-white font-medium text-sm truncate">
-                      {featuredProducts[currentSlide].name}
-                    </p>
-                    <p className="text-coffee-200 text-xs">
-                      {featuredProducts[currentSlide].sizes?.[0]?.price?.toLocaleString()}₮
-                    </p>
-                  </div>
-                </div>
-              </Link>
-            )}
-            {/* Navigation dots */}
-            <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1">
-              {featuredProducts.slice(0, 4).map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentSlide(index)}
-                  className={`w-1.5 h-1.5 rounded-full transition-colors ${
-                    index === currentSlide ? 'bg-white' : 'bg-white/50'
-                  }`}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-        
-        {/* Text & Button below banner - Mobile */}
-        <div className="bg-cream-50 py-6 px-4 text-center">
-          <h1 className="text-2xl font-bold text-coffee-800 mb-2">
-            Чанартай <span className="text-coffee-500">цаасан аяга</span>
-          </h1>
-          <p className="text-coffee-600 mb-4 text-sm">
-            Кафе, ресторанд зориулсан бүтээгдэхүүн
-          </p>
-          <Link href="/products">
-            <Button className="group">
-              Бүтээгдэхүүн үзэх
-              <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </Button>
-          </Link>
-        </div>
-      </section>
-
-      {/* Desktop: Full Width Banner */}
-      <section className="hidden md:block">
-        {/* Banner - Full Width, 100% */}
-        <div className="relative w-full h-[70vh] lg:h-[80vh]">
+      {/* Banner Section - Full Width, No Crop */}
+      <section className="w-full bg-coffee-100">
+        <div className="relative w-full aspect-[16/9] md:aspect-[21/9]">
           {bannerUrl ? (
             <Image
               src={bannerUrl}
               alt="Good Cup Banner"
               fill
-              className="object-cover"
+              className="object-contain"
               priority
             />
           ) : (
             <div className="absolute inset-0 bg-gradient-to-br from-coffee-400 via-coffee-500 to-coffee-600" />
           )}
         </div>
-        
-        {/* Text & Button below banner - Desktop */}
-        <div className="bg-cream-50 py-10 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <h1 className="text-3xl lg:text-4xl font-bold text-coffee-800 mb-3">
-              Чанартай <span className="text-coffee-500">цаасан аяга</span>
-            </h1>
-            <p className="text-coffee-600 mb-6 max-w-lg mx-auto">
-              Кафе, ресторанд зориулсан бүтээгдэхүүн
-            </p>
-            <Link href="/products">
-              <Button size="lg" className="group">
-                Бүтээгдэхүүн үзэх
-                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </Button>
-            </Link>
-          </motion.div>
-        </div>
       </section>
 
-      {/* Featured Products Section - Desktop Only */}
-      <section className="hidden md:block py-12">
+      {/* Featured Products - Below Banner */}
+      <section className="py-6 md:py-10 bg-white">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="font-bold text-coffee-800 text-2xl">Онцлох бараа</h3>
-            <Link href="/products" className="text-coffee-500 hover:text-coffee-600 flex items-center gap-1 font-medium">
-              Бүгдийг үзэх <ArrowRight className="w-5 h-5" />
+          <div className="flex items-center justify-between mb-4 md:mb-6">
+            <h3 className="font-bold text-coffee-800 text-lg md:text-2xl">Онцлох бараа</h3>
+            <Link href="/products" className="text-coffee-500 hover:text-coffee-600 flex items-center gap-1 text-sm md:text-base font-medium">
+              Бүгдийг үзэх <ArrowRight className="w-4 h-4 md:w-5 md:h-5" />
             </Link>
           </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+          
+          {/* Mobile: Horizontal scroll */}
+          <div className="md:hidden flex gap-3 overflow-x-auto pb-4 -mx-4 px-4 snap-x snap-mandatory scrollbar-hide">
+            {featuredProducts.slice(0, 6).map((product) => (
+              <div key={product.id} className="flex-shrink-0 w-[45%] snap-start">
+                <ProductCard product={product} />
+              </div>
+            ))}
+          </div>
+          
+          {/* Desktop: Grid */}
+          <div className="hidden md:grid grid-cols-2 lg:grid-cols-4 gap-6">
             {featuredProducts.slice(0, 4).map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
         </div>
+      </section>
+
+      {/* Text & Button Section */}
+      <section className="bg-cream-50 py-8 md:py-12 text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="container mx-auto px-4"
+        >
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-coffee-800 mb-3">
+            Чанартай <span className="text-coffee-500">цаасан аяга</span>
+          </h1>
+          <p className="text-coffee-600 mb-4 md:mb-6 max-w-lg mx-auto text-sm md:text-base">
+            Кафе, ресторанд зориулсан бүтээгдэхүүн
+          </p>
+          <Link href="/products">
+            <Button size="lg" className="group">
+              Бүтээгдэхүүн үзэх
+              <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </Button>
+          </Link>
+        </motion.div>
       </section>
 
       {/* Features */}
