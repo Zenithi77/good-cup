@@ -74,44 +74,74 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen">
-      {/* Banner Section - Full Width, No Crop */}
-      <section className="w-full bg-coffee-100">
-        <div className="relative w-full aspect-[16/9] md:aspect-[21/9]">
-          {bannerUrl ? (
-            <Image
-              src={bannerUrl}
-              alt="Good Cup Banner"
-              fill
-              className="object-contain"
-              priority
-            />
-          ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-coffee-400 via-coffee-500 to-coffee-600" />
-          )}
+      {/* Desktop: Banner + Featured Products Side by Side */}
+      <section className="hidden md:block py-6 lg:py-10">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-2 gap-6 h-[500px] lg:h-[600px]">
+            {/* Banner Left */}
+            <div className="relative rounded-2xl overflow-hidden bg-coffee-100">
+              {bannerUrl ? (
+                <Image
+                  src={bannerUrl}
+                  alt="Good Cup Banner"
+                  fill
+                  className="object-contain"
+                  priority
+                />
+              ) : (
+                <div className="absolute inset-0 bg-gradient-to-br from-coffee-400 via-coffee-500 to-coffee-600" />
+              )}
+            </div>
+            
+            {/* Featured Products Right - 2x2 Grid */}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-coffee-800 text-xl lg:text-2xl">Онцлох бараа</h3>
+                <Link href="/products" className="text-coffee-500 hover:text-coffee-600 flex items-center gap-1 font-medium">
+                  Бүгдийг үзэх <ArrowRight className="w-5 h-5" />
+                </Link>
+              </div>
+              <div className="grid grid-cols-2 gap-4 h-[calc(100%-40px)]">
+                {featuredProducts.slice(0, 4).map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* Featured Products - Below Banner */}
-      <section className="py-6 md:py-10 bg-white">
+      {/* Mobile: Banner Full Width */}
+      <section className="md:hidden">
+        <div className="w-full bg-coffee-100">
+          <div className="relative w-full aspect-[16/9]">
+            {bannerUrl ? (
+              <Image
+                src={bannerUrl}
+                alt="Good Cup Banner"
+                fill
+                className="object-contain"
+                priority
+              />
+            ) : (
+              <div className="absolute inset-0 bg-gradient-to-br from-coffee-400 via-coffee-500 to-coffee-600" />
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* Mobile: Featured Products - Larger Cards */}
+      <section className="md:hidden py-6 bg-white">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between mb-4 md:mb-6">
-            <h3 className="font-bold text-coffee-800 text-lg md:text-2xl">Онцлох бараа</h3>
-            <Link href="/products" className="text-coffee-500 hover:text-coffee-600 flex items-center gap-1 text-sm md:text-base font-medium">
-              Бүгдийг үзэх <ArrowRight className="w-4 h-4 md:w-5 md:h-5" />
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-coffee-800 text-lg">Онцлох бараа</h3>
+            <Link href="/products" className="text-coffee-500 hover:text-coffee-600 flex items-center gap-1 text-sm font-medium">
+              Бүгдийг үзэх <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
           
-          {/* Mobile: Horizontal scroll */}
-          <div className="md:hidden flex gap-3 overflow-x-auto pb-4 -mx-4 px-4 snap-x snap-mandatory scrollbar-hide">
-            {featuredProducts.slice(0, 6).map((product) => (
-              <div key={product.id} className="flex-shrink-0 w-[45%] snap-start">
-                <ProductCard product={product} />
-              </div>
-            ))}
-          </div>
-          
-          {/* Desktop: Grid */}
-          <div className="hidden md:grid grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Large Cards - 2 columns */}
+          <div className="grid grid-cols-2 gap-3">
             {featuredProducts.slice(0, 4).map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
