@@ -14,6 +14,8 @@ interface SiteSettings {
   bannerImage: string;
   bannerTitle: string;
   bannerSubtitle: string;
+  bannerWidth: number;
+  bannerHeight: number;
   minimumOrderAmount: number;
   deliveryFee: number;
   freeDeliveryMinimum: number;
@@ -27,6 +29,8 @@ const defaultSettings: SiteSettings = {
   bannerImage: '',
   bannerTitle: 'GOOD CUP',
   bannerSubtitle: 'Чанартай таг аяга, савны төрөлжсөн дэлгүүр',
+  bannerWidth: 1200,
+  bannerHeight: 500,
   minimumOrderAmount: 200000,
   deliveryFee: 5000,
   freeDeliveryMinimum: 300000,
@@ -218,6 +222,30 @@ export default function AdminSettingsPage() {
             </div>
             
             <div className="mt-4 space-y-4">
+              {/* Banner Dimensions */}
+              <div className="bg-coffee-800/50 rounded-lg p-4">
+                <h3 className="text-sm font-medium text-coffee-300 mb-3">Banner хэмжээ (pixel)</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    label="Өргөн (px)"
+                    type="number"
+                    value={settings.bannerWidth}
+                    onChange={(e) => setSettings(prev => ({ ...prev, bannerWidth: Number(e.target.value) }))}
+                    placeholder="1200"
+                  />
+                  <Input
+                    label="Өндөр (px)"
+                    type="number"
+                    value={settings.bannerHeight}
+                    onChange={(e) => setSettings(prev => ({ ...prev, bannerHeight: Number(e.target.value) }))}
+                    placeholder="500"
+                  />
+                </div>
+                <p className="text-coffee-500 text-xs mt-2">
+                  Жишээ: Desktop 1200x500, Mobile 800x400
+                </p>
+              </div>
+              
               <Input
                 label="Banner гарчиг"
                 value={settings.bannerTitle}

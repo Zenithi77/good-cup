@@ -12,12 +12,18 @@ import { ProductCard, CategoryFilter } from '@/components/product';
 import { CATEGORIES, CategoryId } from '@/lib/constants';
 import { Button } from '@/components/ui';
 
+interface BannerSettings {
+  url: string;
+  width: number;
+  height: number;
+}
+
 export default function HomePage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<CategoryId | 'all'>('all');
   const [loading, setLoading] = useState(true);
-  const [bannerUrl, setBannerUrl] = useState<string>('');
+  const [banner, setBanner] = useState<BannerSettings>({ url: '', width: 1200, height: 500 });
 
   const fetchProducts = useCallback(async () => {
     try {
@@ -42,14 +48,19 @@ export default function HomePage() {
       const settingsDoc = await getDocs(collection(db, 'settings'));
       // Check for 'site' document first (admin settings format)
       const siteDoc = settingsDoc.docs.find(doc => doc.id === 'site');
-      if (siteDoc && siteDoc.data().bannerImage) {
-        setBannerUrl(siteDoc.data().bannerImage);
+      if (siteDoc) {
+        const data = siteDoc.data();
+        setBanner({
+          url: data.bannerImage || '',
+          width: data.bannerWidth || 1200,
+          height: data.bannerHeight || 500
+        });
         return;
       }
       // Fallback to old format with key-value
       const bannerDoc = settingsDoc.docs.find(doc => doc.data().key === 'banner_url');
       if (bannerDoc) {
-        setBannerUrl(bannerDoc.data().value);
+        setBanner(prev => ({ ...prev, url: bannerDoc.data().value }));
       }
     } catch {
       console.error('Error fetching banner');
@@ -77,16 +88,17 @@ export default function HomePage() {
       {/* Desktop: Banner + Featured Products Side by Side */}
       <section className="hidden md:block py-6 lg:py-10">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 gap-6 h-[500px] lg:h-[600px]">
+          <div className="grid grid-cols-2 gap-6" style={{ height: `${Math.min(banner.height, 700)}px` }}>
             {/* Banner Left */}
             <div className="relative rounded-2xl overflow-hidden bg-coffee-100">
-              {bannerUrl ? (
+              {banner.url ? (
                 <Image
-                  src={bannerUrl}
+                  src={banner.url}
                   alt="Good Cup Banner"
                   fill
                   className="object-contain"
                   priority
+                  sizes="50vw"
                 />
               ) : (
                 <div className="absolute inset-0 bg-gradient-to-br from-coffee-400 via-coffee-500 to-coffee-600" />
@@ -114,14 +126,21 @@ export default function HomePage() {
       {/* Mobile: Banner Full Width */}
       <section className="md:hidden">
         <div className="w-full bg-coffee-100">
-          <div className="relative w-full aspect-[16/9]">
-            {bannerUrl ? (
+          <div 
+            className="relative w-full"
+            style={{ 
+              aspectRatio: `${banner.width} / ${banner.height}`,
+              maxHeight: '400px'
+            }}
+          >
+            {banner.url ? (
               <Image
-                src={bannerUrl}
+                src={banner.url}
                 alt="Good Cup Banner"
                 fill
                 className="object-contain"
                 priority
+                sizes="100vw"
               />
             ) : (
               <div className="absolute inset-0 bg-gradient-to-br from-coffee-400 via-coffee-500 to-coffee-600" />
