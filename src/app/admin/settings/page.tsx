@@ -183,6 +183,9 @@ export default function AdminSettingsPage() {
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
+                  <div className="absolute bottom-2 left-2 bg-black/60 text-xs text-white rounded px-2 py-1">
+                    Зөвлөмж хэмжээ: <b>1200 x 500 px</b>
+                  </div>
                 </div>
               ) : (
                 <div
@@ -196,6 +199,10 @@ export default function AdminSettingsPage() {
                       <ImageIcon className="w-12 h-12 text-coffee-500 mb-2" />
                       <p className="text-coffee-400">Banner зураг оруулах</p>
                       <p className="text-coffee-500 text-sm">PNG, JPG (Хамгийн ихдээ 5MB)</p>
+                      <p className="text-coffee-400 text-xs mt-2">
+                        <span className="font-semibold text-coffee-200">Зөвлөмж хэмжээ:</span> <b>1200 x 500 px</b>
+                      </p>
+                      <p className="text-red-400 text-xs mt-1">* Энэ хэмжээтэй зураг бүх төхөөрөмж дээр хамгийн гоё харагдана</p>
                     </>
                   )}
                 </div>
@@ -242,7 +249,7 @@ export default function AdminSettingsPage() {
                   />
                 </div>
                 <p className="text-coffee-500 text-xs mt-2">
-                  Жишээ: Desktop 1200x500, Mobile 800x400
+                  Зөвлөмж: 1200 x 500 px (харьцаа 12:5)
                 </p>
               </div>
               
