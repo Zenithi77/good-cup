@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowRight, Coffee, Truck, Shield, Headphones, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowRight, Coffee, Truck, Shield, Headphones } from 'lucide-react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Product } from '@/types';
@@ -82,40 +82,114 @@ export default function HomePage() {
     { icon: Headphones, title: 'Тусламж 24/7', description: 'Хэзээ ч холбогдоорой' }
   ];
 
-  const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % featuredProducts.length);
-  const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + featuredProducts.length) % featuredProducts.length);
-
   return (
     <div className="min-h-screen">
-      {/* Hero Banner - Full Width */}
-      <section className="relative w-full h-[60vh] md:h-[70vh] lg:h-[80vh]">
-        {/* Banner Image */}
-        {bannerUrl ? (
-          <Image
-            src={bannerUrl}
-            alt="Good Cup Banner"
-            fill
-            className="object-cover"
-            priority
-          />
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-coffee-400 via-coffee-500 to-coffee-600" />
-        )}
+      {/* Mobile: Banner + Featured Product Side by Side */}
+      <section className="md:hidden">
+        <div className="grid grid-cols-2 h-[50vh]">
+          {/* Banner Left */}
+          <div className="relative">
+            {bannerUrl ? (
+              <Image
+                src={bannerUrl}
+                alt="Good Cup Banner"
+                fill
+                className="object-cover"
+                priority
+              />
+            ) : (
+              <div className="absolute inset-0 bg-gradient-to-br from-coffee-400 via-coffee-500 to-coffee-600" />
+            )}
+          </div>
+          
+          {/* Featured Product Right */}
+          <div className="relative bg-white">
+            {featuredProducts[currentSlide] && (
+              <Link href={`/product/${featuredProducts[currentSlide].id}`} className="block h-full">
+                <div className="relative h-full">
+                  {featuredProducts[currentSlide].imageUrl ? (
+                    <Image
+                      src={featuredProducts[currentSlide].imageUrl}
+                      alt={featuredProducts[currentSlide].name}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 bg-coffee-100 flex items-center justify-center">
+                      <Coffee className="w-12 h-12 text-coffee-300" />
+                    </div>
+                  )}
+                  {/* Product Info Overlay */}
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
+                    <p className="text-white font-medium text-sm truncate">
+                      {featuredProducts[currentSlide].name}
+                    </p>
+                    <p className="text-coffee-200 text-xs">
+                      {featuredProducts[currentSlide].sizes?.[0]?.price?.toLocaleString()}₮
+                    </p>
+                  </div>
+                </div>
+              </Link>
+            )}
+            {/* Navigation dots */}
+            <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1">
+              {featuredProducts.slice(0, 4).map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentSlide(index)}
+                  className={`w-1.5 h-1.5 rounded-full transition-colors ${
+                    index === currentSlide ? 'bg-white' : 'bg-white/50'
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
         
-        {/* Overlay */}
-        <div className="absolute inset-0 bg-black/40" />
+        {/* Text & Button below banner - Mobile */}
+        <div className="bg-cream-50 py-6 px-4 text-center">
+          <h1 className="text-2xl font-bold text-coffee-800 mb-2">
+            Чанартай <span className="text-coffee-500">цаасан аяга</span>
+          </h1>
+          <p className="text-coffee-600 mb-4 text-sm">
+            Кафе, ресторанд зориулсан бүтээгдэхүүн
+          </p>
+          <Link href="/products">
+            <Button className="group">
+              Бүтээгдэхүүн үзэх
+              <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </Button>
+          </Link>
+        </div>
+      </section>
+
+      {/* Desktop: Full Width Banner */}
+      <section className="hidden md:block">
+        {/* Banner - Full Width, 100% */}
+        <div className="relative w-full h-[70vh] lg:h-[80vh]">
+          {bannerUrl ? (
+            <Image
+              src={bannerUrl}
+              alt="Good Cup Banner"
+              fill
+              className="object-cover"
+              priority
+            />
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-coffee-400 via-coffee-500 to-coffee-600" />
+          )}
+        </div>
         
-        {/* Text & Button on Banner */}
-        <div className="absolute inset-0 flex items-center justify-center">
+        {/* Text & Button below banner - Desktop */}
+        <div className="bg-cream-50 py-10 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center px-4"
           >
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4">
-              Чанартай <span className="text-coffee-200">цаасан аяга</span>
+            <h1 className="text-3xl lg:text-4xl font-bold text-coffee-800 mb-3">
+              Чанартай <span className="text-coffee-500">цаасан аяга</span>
             </h1>
-            <p className="text-white/90 mb-6 max-w-lg mx-auto text-sm md:text-base">
+            <p className="text-coffee-600 mb-6 max-w-lg mx-auto">
               Кафе, ресторанд зориулсан бүтээгдэхүүн
             </p>
             <Link href="/products">
@@ -128,74 +202,19 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Featured Products Section */}
-      <section className="py-8 md:py-12">
+      {/* Featured Products Section - Desktop Only */}
+      <section className="hidden md:block py-12">
         <div className="container mx-auto px-4">
-          {/* Desktop: Grid Layout */}
-          <div className="hidden md:block">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="font-bold text-coffee-800 text-2xl">Онцлох бараа</h3>
-              <Link href="/products" className="text-coffee-500 hover:text-coffee-600 flex items-center gap-1 font-medium">
-                Бүгдийг үзэх <ArrowRight className="w-5 h-5" />
-              </Link>
-            </div>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-              {featuredProducts.slice(0, 4).map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="font-bold text-coffee-800 text-2xl">Онцлох бараа</h3>
+            <Link href="/products" className="text-coffee-500 hover:text-coffee-600 flex items-center gap-1 font-medium">
+              Бүгдийг үзэх <ArrowRight className="w-5 h-5" />
+            </Link>
           </div>
-
-          {/* Mobile: Slider */}
-          <div className="md:hidden">
-            {featuredProducts.length > 0 && (
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-coffee-800">Онцлох бараа</h3>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={prevSlide}
-                      className="p-2 rounded-full bg-coffee-100 text-coffee-600 hover:bg-coffee-200"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={nextSlide}
-                      className="p-2 rounded-full bg-coffee-100 text-coffee-600 hover:bg-coffee-200"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="relative overflow-hidden">
-                  <motion.div
-                    className="flex"
-                    animate={{ x: `-${currentSlide * 100}%` }}
-                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                  >
-                    {featuredProducts.map((product) => (
-                      <div key={product.id} className="w-full flex-shrink-0 px-1">
-                        <ProductCard product={product} />
-                      </div>
-                    ))}
-                  </motion.div>
-                </div>
-
-                {/* Dots indicator */}
-                <div className="flex justify-center gap-2 mt-4">
-                  {featuredProducts.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setCurrentSlide(index)}
-                      className={`w-2 h-2 rounded-full transition-colors ${
-                        index === currentSlide ? 'bg-coffee-500' : 'bg-coffee-200'
-                      }`}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+            {featuredProducts.slice(0, 4).map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
           </div>
         </div>
       </section>
