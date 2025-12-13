@@ -13,9 +13,8 @@ import { CATEGORIES, CategoryId } from '@/lib/constants';
 import { Button } from '@/components/ui';
 
 interface BannerSettings {
-  url: string;
-  width: number;
-  height: number;
+  desktop: string;
+  mobile: string;
 }
 
 interface CategoryImages {
@@ -27,7 +26,7 @@ export default function HomePage() {
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<CategoryId | 'all'>('all');
   const [loading, setLoading] = useState(true);
-  const [banner, setBanner] = useState<BannerSettings>({ url: '', width: 1200, height: 500 });
+  const [banner, setBanner] = useState<BannerSettings>({ desktop: '', mobile: '' });
   const [categoryImages, setCategoryImages] = useState<CategoryImages>({});
 
   const fetchProducts = useCallback(async () => {
@@ -56,9 +55,8 @@ export default function HomePage() {
       if (siteDoc) {
         const data = siteDoc.data();
         setBanner({
-          url: data.bannerImage || '',
-          width: data.bannerWidth || 1200,
-          height: data.bannerHeight || 500
+          desktop: data.bannerImage || '',
+          mobile: data.bannerImageMobile || data.bannerImage || ''
         });
         // Set category images
         if (data.categoryImages) {
@@ -69,7 +67,7 @@ export default function HomePage() {
       // Fallback to old format with key-value
       const bannerDoc = settingsDoc.docs.find(doc => doc.data().key === 'banner_url');
       if (bannerDoc) {
-        setBanner(prev => ({ ...prev, url: bannerDoc.data().value }));
+        setBanner({ desktop: bannerDoc.data().value, mobile: bannerDoc.data().value });
       }
     } catch {
       console.error('Error fetching banner');
@@ -97,15 +95,15 @@ export default function HomePage() {
       {/* Desktop: Banner + Featured Products Side by Side */}
       <section className="hidden md:block py-6 lg:py-10">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 gap-6" style={{ height: `${Math.min(banner.height, 700)}px` }}>
+          <div className="grid grid-cols-2 gap-6 h-[500px] lg:h-[550px]">
             {/* Banner Left */}
             <div className="relative rounded-2xl overflow-hidden bg-coffee-100">
-              {banner.url ? (
+              {banner.desktop ? (
                 <Image
-                  src={banner.url}
+                  src={banner.desktop}
                   alt="Good Cup Banner"
                   fill
-                  className="object-contain"
+                  className="object-cover"
                   priority
                   sizes="50vw"
                 />
@@ -132,22 +130,16 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Mobile: Banner Full Width */}
+      {/* Mobile: Banner Full Width - Uses Mobile Banner */}
       <section className="md:hidden">
         <div className="w-full bg-coffee-100">
-          <div 
-            className="relative w-full"
-            style={{ 
-              aspectRatio: `${banner.width} / ${banner.height}`,
-              maxHeight: '400px'
-            }}
-          >
-            {banner.url ? (
+          <div className="relative w-full aspect-[3/2]">
+            {banner.mobile ? (
               <Image
-                src={banner.url}
+                src={banner.mobile}
                 alt="Good Cup Banner"
                 fill
-                className="object-contain"
+                className="object-cover"
                 priority
                 sizes="100vw"
               />

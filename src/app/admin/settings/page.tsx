@@ -18,10 +18,9 @@ interface CategoryImages {
 
 interface SiteSettings {
   bannerImage: string;
+  bannerImageMobile: string;
   bannerTitle: string;
   bannerSubtitle: string;
-  bannerWidth: number;
-  bannerHeight: number;
   categoryImages: CategoryImages;
   minimumOrderAmount: number;
   deliveryFee: number;
@@ -34,10 +33,9 @@ interface SiteSettings {
 
 const defaultSettings: SiteSettings = {
   bannerImage: '',
+  bannerImageMobile: '',
   bannerTitle: 'GOOD CUP',
   bannerSubtitle: 'Чанартай таг аяга, савны төрөлжсөн дэлгүүр',
-  bannerWidth: 1200,
-  bannerHeight: 500,
   categoryImages: {},
   minimumOrderAmount: 200000,
   deliveryFee: 5000,
@@ -52,6 +50,7 @@ export default function AdminSettingsPage() {
   const router = useRouter();
   const { isAdmin, loading } = useAuthStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const mobileFileInputRef = useRef<HTMLInputElement>(null);
   
   const [settings, setSettings] = useState<SiteSettings>(defaultSettings);
   const [loadingSettings, setLoadingSettings] = useState(true);
@@ -127,6 +126,48 @@ export default function AdminSettingsPage() {
 
   const removeBannerImage = () => {
     setSettings(prev => ({ ...prev, bannerImage: '' }));
+  };
+
+  const handleMobileBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Зөвхөн зураг оруулна у|у');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Зураг 5MB-аас бага байх ёстой');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+
+      const data = await response.json();
+      setSettings(prev => ({ ...prev, bannerImageMobile: data.url }));
+      toast.success('Mobile banner орууллаа');
+    } catch {
+      toast.error('Зураг оруулахад алдаа гарлаа');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeMobileBanner = () => {
+    setSettings(prev => ({ ...prev, bannerImageMobile: '' }));
   };
 
   const handleCategoryImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, categoryId: string) => {
@@ -227,93 +268,128 @@ export default function AdminSettingsPage() {
         <div className="space-y-8">
           {/* Banner Settings */}
           <div className="bg-coffee-900 rounded-xl border border-coffee-800 p-6">
-            <h2 className="text-lg font-semibold text-coffee-100 mb-4">Banner зураг</h2>
+            <h2 className="text-lg font-semibold text-coffee-100 mb-4">Banner зурагнууд</h2>
+            <p className="text-coffee-400 text-sm mb-6">Desktop болон Mobile-д тус тусад нь banner оруулна</p>
             
-            <div className="space-y-4">
-              {settings.bannerImage ? (
-                <div className="relative aspect-[3/1] rounded-xl overflow-hidden bg-coffee-800">
-                  <Image
-                    src={settings.bannerImage}
-                    alt="Banner"
-                    fill
-                    className="object-cover"
-                  />
-                  <button
-                    onClick={removeBannerImage}
-                    className="absolute top-2 right-2 p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                  <div className="absolute bottom-2 left-2 bg-black/60 text-xs text-white rounded px-2 py-1">
-                    Зөвлөмж хэмжээ: <b>1200 x 500 px</b>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Desktop Banner */}
+              <div>
+                <h3 className="text-sm font-medium text-coffee-200 mb-3 flex items-center gap-2">
+                  🖥️ Desktop Banner
+                  <span className="text-coffee-500 text-xs font-normal">(1200 x 500 px)</span>
+                </h3>
+                {settings.bannerImage ? (
+                  <div className="relative aspect-[12/5] rounded-xl overflow-hidden bg-coffee-800">
+                    <Image
+                      src={settings.bannerImage}
+                      alt="Desktop Banner"
+                      fill
+                      className="object-cover"
+                    />
+                    <button
+                      onClick={removeBannerImage}
+                      className="absolute top-2 right-2 p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
-                </div>
-              ) : (
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  className="aspect-[3/1] rounded-xl border-2 border-dashed border-coffee-700 hover:border-coffee-500 transition-colors cursor-pointer flex flex-col items-center justify-center bg-coffee-800/50"
-                >
-                  {uploading ? (
-                    <Loader2 className="w-8 h-8 animate-spin text-coffee-500" />
-                  ) : (
-                    <>
-                      <ImageIcon className="w-12 h-12 text-coffee-500 mb-2" />
-                      <p className="text-coffee-400">Banner зураг оруулах</p>
-                      <p className="text-coffee-500 text-sm">PNG, JPG (Хамгийн ихдээ 5MB)</p>
-                      <p className="text-coffee-400 text-xs mt-2">
-                        <span className="font-semibold text-coffee-200">Зөвлөмж хэмжээ:</span> <b>1200 x 500 px</b>
-                      </p>
-                      <p className="text-red-400 text-xs mt-1">* Энэ хэмжээтэй зураг бүх төхөөрөмж дээр хамгийн гоё харагдана</p>
-                    </>
-                  )}
-                </div>
-              )}
-              
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
-              />
-              
-              {settings.bannerImage && (
-                <Button
-                  onClick={() => fileInputRef.current?.click()}
-                  variant="outline"
-                  disabled={uploading}
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  Зураг солих
-                </Button>
-              )}
+                ) : (
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="aspect-[12/5] rounded-xl border-2 border-dashed border-coffee-700 hover:border-coffee-500 transition-colors cursor-pointer flex flex-col items-center justify-center bg-coffee-800/50"
+                  >
+                    {uploading ? (
+                      <Loader2 className="w-6 h-6 animate-spin text-coffee-500" />
+                    ) : (
+                      <>
+                        <ImageIcon className="w-10 h-10 text-coffee-500 mb-2" />
+                        <p className="text-coffee-400 text-sm">Desktop banner</p>
+                        <p className="text-coffee-500 text-xs">1200 x 500 px</p>
+                      </>
+                    )}
+                  </div>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+                {settings.bannerImage && (
+                  <Button
+                    onClick={() => fileInputRef.current?.click()}
+                    variant="outline"
+                    size="sm"
+                    className="mt-2"
+                    disabled={uploading}
+                  >
+                    <Upload className="w-3 h-3 mr-1" />
+                    Солих
+                  </Button>
+                )}
+              </div>
+
+              {/* Mobile Banner */}
+              <div>
+                <h3 className="text-sm font-medium text-coffee-200 mb-3 flex items-center gap-2">
+                  📱 Mobile Banner
+                  <span className="text-coffee-500 text-xs font-normal">(600 x 400 px)</span>
+                </h3>
+                {settings.bannerImageMobile ? (
+                  <div className="relative aspect-[3/2] rounded-xl overflow-hidden bg-coffee-800">
+                    <Image
+                      src={settings.bannerImageMobile}
+                      alt="Mobile Banner"
+                      fill
+                      className="object-cover"
+                    />
+                    <button
+                      onClick={removeMobileBanner}
+                      className="absolute top-2 right-2 p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => mobileFileInputRef.current?.click()}
+                    className="aspect-[3/2] rounded-xl border-2 border-dashed border-coffee-700 hover:border-coffee-500 transition-colors cursor-pointer flex flex-col items-center justify-center bg-coffee-800/50"
+                  >
+                    {uploading ? (
+                      <Loader2 className="w-6 h-6 animate-spin text-coffee-500" />
+                    ) : (
+                      <>
+                        <ImageIcon className="w-10 h-10 text-coffee-500 mb-2" />
+                        <p className="text-coffee-400 text-sm">Mobile banner</p>
+                        <p className="text-coffee-500 text-xs">600 x 400 px</p>
+                      </>
+                    )}
+                  </div>
+                )}
+                <input
+                  ref={mobileFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleMobileBannerUpload}
+                  className="hidden"
+                />
+                {settings.bannerImageMobile && (
+                  <Button
+                    onClick={() => mobileFileInputRef.current?.click()}
+                    variant="outline"
+                    size="sm"
+                    className="mt-2"
+                    disabled={uploading}
+                  >
+                    <Upload className="w-3 h-3 mr-1" />
+                    Солих
+                  </Button>
+                )}
+              </div>
             </div>
             
-            <div className="mt-4 space-y-4">
-              {/* Banner Dimensions */}
-              <div className="bg-coffee-800/50 rounded-lg p-4">
-                <h3 className="text-sm font-medium text-coffee-300 mb-3">Banner хэмжээ (pixel)</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <Input
-                    label="Өргөн (px)"
-                    type="number"
-                    value={settings.bannerWidth}
-                    onChange={(e) => setSettings(prev => ({ ...prev, bannerWidth: Number(e.target.value) }))}
-                    placeholder="1200"
-                  />
-                  <Input
-                    label="Өндөр (px)"
-                    type="number"
-                    value={settings.bannerHeight}
-                    onChange={(e) => setSettings(prev => ({ ...prev, bannerHeight: Number(e.target.value) }))}
-                    placeholder="500"
-                  />
-                </div>
-                <p className="text-coffee-500 text-xs mt-2">
-                  Зөвлөмж: 1200 x 500 px (харьцаа 12:5)
-                </p>
-              </div>
-              
+            <div className="mt-6 space-y-4">
               <Input
                 label="Banner гарчиг"
                 value={settings.bannerTitle}
