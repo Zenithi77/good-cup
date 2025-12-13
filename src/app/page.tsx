@@ -18,12 +18,17 @@ interface BannerSettings {
   height: number;
 }
 
+interface CategoryImages {
+  [key: string]: string;
+}
+
 export default function HomePage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<CategoryId | 'all'>('all');
   const [loading, setLoading] = useState(true);
   const [banner, setBanner] = useState<BannerSettings>({ url: '', width: 1200, height: 500 });
+  const [categoryImages, setCategoryImages] = useState<CategoryImages>({});
 
   const fetchProducts = useCallback(async () => {
     try {
@@ -55,6 +60,10 @@ export default function HomePage() {
           width: data.bannerWidth || 1200,
           height: data.bannerHeight || 500
         });
+        // Set category images
+        if (data.categoryImages) {
+          setCategoryImages(data.categoryImages);
+        }
         return;
       }
       // Fallback to old format with key-value
@@ -235,7 +244,7 @@ export default function HomePage() {
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 md:gap-4">
             {CATEGORIES.map((category, index) => (
               <motion.div
                 key={category.id}
@@ -248,11 +257,30 @@ export default function HomePage() {
                   href={`/products?category=${category.id}`}
                   className="block group"
                 >
-                  <div className="bg-coffee-50 rounded-xl p-4 text-center border border-coffee-200 hover:border-coffee-500 hover:bg-coffee-100 transition-all duration-300">
-                    <span className="text-2xl md:text-3xl mb-2 block">{category.icon}</span>
-                    <h3 className="text-coffee-700 font-medium text-xs md:text-sm group-hover:text-coffee-500 transition-colors">
-                      {category.name}
-                    </h3>
+                  <div className="relative aspect-square rounded-xl overflow-hidden bg-coffee-100 border border-coffee-200 hover:border-coffee-500 transition-all duration-300">
+                    {categoryImages[category.id] ? (
+                      <>
+                        <Image
+                          src={categoryImages[category.id]}
+                          alt={category.name}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-300"
+                          sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 16vw"
+                        />
+                        {/* Dark overlay */}
+                        <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors" />
+                      </>
+                    ) : (
+                      <div className="absolute inset-0 bg-gradient-to-br from-coffee-200 to-coffee-300 flex items-center justify-center">
+                        <span className="text-4xl">{category.icon}</span>
+                      </div>
+                    )}
+                    {/* Category name overlay */}
+                    <div className="absolute inset-0 flex items-center justify-center p-2">
+                      <h3 className="text-white font-semibold text-xs sm:text-sm text-center drop-shadow-lg">
+                        {category.name}
+                      </h3>
+                    </div>
                   </div>
                 </Link>
               </motion.div>

@@ -10,12 +10,19 @@ import { useAuthStore } from '@/store/authStore';
 import { Button, Input } from '@/components/ui';
 import toast from 'react-hot-toast';
 
+import { CATEGORIES } from '@/lib/constants';
+
+interface CategoryImages {
+  [key: string]: string;
+}
+
 interface SiteSettings {
   bannerImage: string;
   bannerTitle: string;
   bannerSubtitle: string;
   bannerWidth: number;
   bannerHeight: number;
+  categoryImages: CategoryImages;
   minimumOrderAmount: number;
   deliveryFee: number;
   freeDeliveryMinimum: number;
@@ -31,6 +38,7 @@ const defaultSettings: SiteSettings = {
   bannerSubtitle: 'Чанартай таг аяга, савны төрөлжсөн дэлгүүр',
   bannerWidth: 1200,
   bannerHeight: 500,
+  categoryImages: {},
   minimumOrderAmount: 200000,
   deliveryFee: 5000,
   freeDeliveryMinimum: 300000,
@@ -49,6 +57,7 @@ export default function AdminSettingsPage() {
   const [loadingSettings, setLoadingSettings] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadingCategory, setUploadingCategory] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && !isAdmin) {
@@ -118,6 +127,58 @@ export default function AdminSettingsPage() {
 
   const removeBannerImage = () => {
     setSettings(prev => ({ ...prev, bannerImage: '' }));
+  };
+
+  const handleCategoryImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, categoryId: string) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Зөвхөн зураг оруулна уу');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Зураг 5MB-аас бага байх ёстой');
+      return;
+    }
+
+    setUploadingCategory(categoryId);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+
+      const data = await response.json();
+      setSettings(prev => ({
+        ...prev,
+        categoryImages: {
+          ...prev.categoryImages,
+          [categoryId]: data.url
+        }
+      }));
+      toast.success('Ангилалын зураг орууллаа');
+    } catch {
+      toast.error('Зураг оруулахад алдаа гарлаа');
+    } finally {
+      setUploadingCategory(null);
+    }
+  };
+
+  const removeCategoryImage = (categoryId: string) => {
+    setSettings(prev => {
+      const newCategoryImages = { ...prev.categoryImages };
+      delete newCategoryImages[categoryId];
+      return { ...prev, categoryImages: newCategoryImages };
+    });
   };
 
   const handleSave = async () => {
@@ -263,6 +324,59 @@ export default function AdminSettingsPage() {
                 value={settings.bannerSubtitle}
                 onChange={(e) => setSettings(prev => ({ ...prev, bannerSubtitle: e.target.value }))}
               />
+            </div>
+          </div>
+
+          {/* Category Images Settings */}
+          <div className="bg-coffee-900 rounded-xl border border-coffee-800 p-6">
+            <h2 className="text-lg font-semibold text-coffee-100 mb-2">Ангилалын зурагнууд</h2>
+            <p className="text-coffee-400 text-sm mb-4">
+              Homepage дээр card хэлбэрээр харагдана. Зөвлөмж хэмжээ: <b>400 x 400 px</b> (1:1 харьцаа)
+            </p>
+            
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {CATEGORIES.map((category) => (
+                <div key={category.id} className="relative">
+                  <p className="text-coffee-300 text-xs mb-2 truncate">{category.name}</p>
+                  {settings.categoryImages?.[category.id] ? (
+                    <div className="relative aspect-square rounded-xl overflow-hidden bg-coffee-800 group">
+                      <Image
+                        src={settings.categoryImages[category.id]}
+                        alt={category.name}
+                        fill
+                        className="object-cover"
+                      />
+                      {/* Dark overlay preview */}
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                        <span className="text-white font-medium text-xs text-center px-2">{category.name}</span>
+                      </div>
+                      <button
+                        onClick={() => removeCategoryImage(category.id)}
+                        className="absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors opacity-0 group-hover:opacity-100"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="aspect-square rounded-xl border-2 border-dashed border-coffee-700 hover:border-coffee-500 transition-colors cursor-pointer flex flex-col items-center justify-center bg-coffee-800/50">
+                      {uploadingCategory === category.id ? (
+                        <Loader2 className="w-6 h-6 animate-spin text-coffee-500" />
+                      ) : (
+                        <>
+                          <ImageIcon className="w-8 h-8 text-coffee-500 mb-1" />
+                          <span className="text-coffee-500 text-xs">Зураг+</span>
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleCategoryImageUpload(e, category.id)}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
 
