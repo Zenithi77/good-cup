@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { ArrowRight, Coffee, Truck, Shield, Headphones } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowRight, Coffee, Truck, Shield, Headphones, ChevronLeft, ChevronRight } from 'lucide-react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Product } from '@/types';
@@ -28,6 +28,16 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [banner, setBanner] = useState<BannerSettings>({ desktop: '', mobile: '' });
   const [categoryImages, setCategoryImages] = useState<CategoryImages>({});
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  // Auto slide for mobile featured products
+  useEffect(() => {
+    if (featuredProducts.length === 0) return;
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % featuredProducts.length);
+    }, 4000); // 4 seconds per slide
+    return () => clearInterval(timer);
+  }, [featuredProducts.length]);
 
   const fetchProducts = useCallback(async () => {
     try {
@@ -190,25 +200,46 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Mobile: Featured Products - 90% Width Horizontal Scroll */}
+      {/* Mobile: Featured Products - Auto Slide Carousel */}
       <section className="md:hidden py-6 bg-white">
-        <div className="px-4">
+        <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-bold text-coffee-800 text-lg">Онцлох бараа</h3>
             <Link href="/products" className="text-coffee-500 hover:text-coffee-600 flex items-center gap-1 text-sm font-medium">
               Бүгдийг үзэх <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
-        </div>
-        
-        {/* Horizontal Scroll - 90% Width Cards */}
-        <div className="overflow-x-auto scrollbar-hide">
-          <div className="flex gap-4 px-4 pb-2" style={{ width: 'max-content' }}>
-            {featuredProducts.slice(0, 6).map((product) => (
-              <div key={product.id} className="w-[85vw] flex-shrink-0">
-                <ProductCard product={product} variant="large" />
-              </div>
-            ))}
+          
+          {/* Carousel Container */}
+          <div className="relative overflow-hidden">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentSlide}
+                initial={{ opacity: 0, x: 100 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -100 }}
+                transition={{ duration: 0.4, ease: "easeInOut" }}
+              >
+                {featuredProducts[currentSlide] && (
+                  <ProductCard product={featuredProducts[currentSlide]} variant="large" />
+                )}
+              </motion.div>
+            </AnimatePresence>
+            
+            {/* Dots Indicator */}
+            <div className="flex justify-center gap-2 mt-4">
+              {featuredProducts.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentSlide(index)}
+                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                    index === currentSlide 
+                      ? 'bg-coffee-500 w-6' 
+                      : 'bg-coffee-300'
+                  }`}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </section>
