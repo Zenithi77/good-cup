@@ -267,17 +267,17 @@ export default function HomePage() {
                           className="object-cover group-hover:scale-105 transition-transform duration-300"
                           sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 16vw"
                         />
-                        {/* Dark overlay */}
-                        <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors" />
+                        {/* Light overlay for better text visibility */}
+                        <div className="absolute inset-0 bg-white/30 group-hover:bg-white/40 transition-colors" />
                       </>
                     ) : (
-                      <div className="absolute inset-0 bg-gradient-to-br from-coffee-200 to-coffee-300 flex items-center justify-center">
+                      <div className="absolute inset-0 bg-gradient-to-br from-coffee-100 to-coffee-200 flex items-center justify-center">
                         <span className="text-4xl">{category.icon}</span>
                       </div>
                     )}
-                    {/* Category name overlay */}
+                    {/* Category name overlay - BLACK text */}
                     <div className="absolute inset-0 flex items-center justify-center p-2">
-                      <h3 className="text-white font-semibold text-xs sm:text-sm text-center drop-shadow-lg">
+                      <h3 className="text-coffee-900 font-bold text-xs sm:text-sm text-center drop-shadow-sm">
                         {category.name}
                       </h3>
                     </div>
