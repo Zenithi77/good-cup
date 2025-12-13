@@ -43,66 +43,62 @@ export function ProductCard({ product, variant = 'default' }: ProductCardProps) 
     }
   };
 
-  // Large variant for mobile featured products - horizontal card layout
+  // Large variant for mobile featured products - vertical card like desktop but bigger
   if (variant === 'large') {
     return (
       <motion.div
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.3 }}
       >
         <Link href={`/product/${product.id}`}>
-          <div className="group relative bg-white rounded-2xl overflow-hidden border border-coffee-200 shadow-md">
-            {/* Horizontal Layout */}
-            <div className="flex">
-              {/* Image - Left Side */}
-              <div className="relative w-2/5 aspect-square overflow-hidden bg-coffee-100 flex-shrink-0">
-                <Image
-                  src={product.imageUrl || '/placeholder.png'}
-                  alt={product.name}
-                  fill
-                  className="object-cover"
-                  sizes="40vw"
-                />
-                <ProductBadge badge={product.badge || ''} />
-              </div>
+          <div className="group relative bg-white rounded-2xl overflow-hidden border border-coffee-200 shadow-lg">
+            {/* Image - Full Width, Top */}
+            <div className="relative aspect-square overflow-hidden bg-coffee-100">
+              <Image
+                src={product.imageUrl || '/placeholder.png'}
+                alt={product.name}
+                fill
+                className="object-cover"
+                sizes="90vw"
+                priority
+              />
+              <ProductBadge badge={product.badge || ''} />
+            </div>
 
-              {/* Info - Right Side */}
-              <div className="flex-1 p-4 flex flex-col justify-between">
-                <div>
-                  <h3 className="text-coffee-800 font-semibold text-base line-clamp-2 mb-2">
-                    {product.name}
-                  </h3>
-                  <p className="text-coffee-500 text-sm mb-1">
-                    {product.packageQty}ш/багц
-                  </p>
-                  <p className="text-coffee-600 font-bold text-lg">
-                    {formatPrice(lowestPrice)}
-                    {product.sizes.length > 1 && (
-                      <span className="text-sm text-coffee-400 font-normal ml-1">-с</span>
-                    )}
-                  </p>
-                </div>
-                
-                <div className="flex items-center justify-between mt-3">
-                  {product.stock > 0 ? (
-                    <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">
-                      Бэлэн байгаа
-                    </span>
-                  ) : (
-                    <span className="text-xs text-red-600 bg-red-100 px-2 py-1 rounded-full">
-                      Дууссан
-                    </span>
-                  )}
-                  <Button
-                    onClick={handleAddToCart}
-                    size="sm"
-                    className="flex items-center gap-1"
-                  >
-                    <ShoppingCart className="w-4 h-4" />
-                    Сагслах
-                  </Button>
-                </div>
+            {/* Info - Below Image */}
+            <div className="p-5">
+              <h3 className="text-coffee-800 font-semibold text-lg line-clamp-2 mb-2">
+                {product.name}
+              </h3>
+              <p className="text-coffee-500 text-sm mb-2">
+                {product.packageQty}ш/багц
+              </p>
+              <p className="text-coffee-600 font-bold text-xl mb-4">
+                {formatPrice(lowestPrice)}
+                {product.sizes.length > 1 && (
+                  <span className="text-sm text-coffee-400 font-normal ml-1">-с</span>
+                )}
+              </p>
+              
+              <div className="flex items-center justify-between">
+                {product.stock > 0 ? (
+                  <span className="text-sm text-green-600 bg-green-100 px-3 py-1 rounded-full">
+                    Бэлэн байгаа
+                  </span>
+                ) : (
+                  <span className="text-sm text-red-600 bg-red-100 px-3 py-1 rounded-full">
+                    Дууссан
+                  </span>
+                )}
+                <Button
+                  onClick={handleAddToCart}
+                  size="default"
+                  className="flex items-center gap-2"
+                >
+                  <ShoppingCart className="w-4 h-4" />
+                  Сагслах
+                </Button>
               </div>
             </div>
           </div>
