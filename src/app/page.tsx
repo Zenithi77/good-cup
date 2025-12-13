@@ -94,47 +94,48 @@ export default function HomePage() {
     <div className="min-h-screen">
       {/* Desktop: Full Width Hero Banner */}
       <section className="hidden md:block relative">
-        {/* Full Width Banner */}
-        <div className="relative h-[70vh] min-h-[500px] max-h-[700px] w-full overflow-hidden">
+        {/* Full Width Banner - Larger Height */}
+        <div className="relative h-[80vh] min-h-[600px] max-h-[800px] w-full overflow-hidden">
           {banner.desktop ? (
             <Image
               src={banner.desktop}
               alt="Good Cup Banner"
               fill
-              className="object-cover"
+              className="object-cover object-center"
               priority
               sizes="100vw"
+              quality={90}
             />
           ) : (
             <div className="absolute inset-0 bg-gradient-to-br from-coffee-600 via-coffee-700 to-coffee-800" />
           )}
-          {/* Dark Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent" />
+          {/* Subtle bottom gradient for text readability */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
           
-          {/* Text Content */}
-          <div className="absolute inset-0 flex items-center">
-            <div className="container mx-auto px-4">
+          {/* Text Content - Bottom Left */}
+          <div className="absolute inset-0 flex items-end pb-16 lg:pb-20">
+            <div className="container mx-auto px-6 lg:px-8">
               <motion.div
-                initial={{ opacity: 0, x: -30 }}
-                animate={{ opacity: 1, x: 0 }}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
-                className="max-w-xl"
+                className="max-w-2xl"
               >
-                <h1 className="text-4xl lg:text-5xl xl:text-6xl font-bold text-white mb-4 leading-tight">
+                <h1 className="text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-3 leading-tight drop-shadow-lg">
                   Чанартай <span className="text-coffee-300">цаасан аяга</span>
                 </h1>
-                <p className="text-lg lg:text-xl text-white/80 mb-6">
+                <p className="text-base lg:text-lg text-white/90 mb-5 drop-shadow-md">
                   Кафе, ресторанд зориулсан бүтээгдэхүүн. Бөөний болон жижиглэнгийн худалдаа.
                 </p>
-                <div className="flex gap-4">
+                <div className="flex gap-3">
                   <Link href="/products">
-                    <Button size="lg" className="group bg-coffee-500 hover:bg-coffee-400">
+                    <Button size="lg" className="group bg-coffee-500 hover:bg-coffee-400 shadow-lg">
                       Бүтээгдэхүүн үзэх
                       <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                     </Button>
                   </Link>
                   <Link href="#categories">
-                    <Button size="lg" variant="outline" className="border-white/50 text-white hover:bg-white/10">
+                    <Button size="lg" variant="outline" className="border-white/70 text-white hover:bg-white/20 shadow-lg">
                       Ангилал
                     </Button>
                   </Link>
@@ -189,20 +190,24 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Mobile: Featured Products - Larger Cards */}
+      {/* Mobile: Featured Products - 90% Width Horizontal Scroll */}
       <section className="md:hidden py-6 bg-white">
-        <div className="container mx-auto px-4">
+        <div className="px-4">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-bold text-coffee-800 text-lg">Онцлох бараа</h3>
             <Link href="/products" className="text-coffee-500 hover:text-coffee-600 flex items-center gap-1 text-sm font-medium">
               Бүгдийг үзэх <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
-          
-          {/* Large Cards - 2 columns */}
-          <div className="grid grid-cols-2 gap-3">
-            {featuredProducts.slice(0, 4).map((product) => (
-              <ProductCard key={product.id} product={product} />
+        </div>
+        
+        {/* Horizontal Scroll - 90% Width Cards */}
+        <div className="overflow-x-auto scrollbar-hide">
+          <div className="flex gap-4 px-4 pb-2" style={{ width: 'max-content' }}>
+            {featuredProducts.slice(0, 6).map((product) => (
+              <div key={product.id} className="w-[85vw] flex-shrink-0">
+                <ProductCard product={product} variant="large" />
+              </div>
             ))}
           </div>
         </div>
