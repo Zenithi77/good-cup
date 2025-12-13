@@ -92,39 +92,78 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen">
-      {/* Desktop: Banner + Featured Products Side by Side */}
-      <section className="hidden md:block py-6 lg:py-10">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 gap-6 h-[500px] lg:h-[550px]">
-            {/* Banner Left */}
-            <div className="relative rounded-2xl overflow-hidden bg-coffee-100">
-              {banner.desktop ? (
-                <Image
-                  src={banner.desktop}
-                  alt="Good Cup Banner"
-                  fill
-                  className="object-cover"
-                  priority
-                  sizes="50vw"
-                />
-              ) : (
-                <div className="absolute inset-0 bg-gradient-to-br from-coffee-400 via-coffee-500 to-coffee-600" />
-              )}
+      {/* Desktop: Full Width Hero Banner */}
+      <section className="hidden md:block relative">
+        {/* Full Width Banner */}
+        <div className="relative h-[70vh] min-h-[500px] max-h-[700px] w-full overflow-hidden">
+          {banner.desktop ? (
+            <Image
+              src={banner.desktop}
+              alt="Good Cup Banner"
+              fill
+              className="object-cover"
+              priority
+              sizes="100vw"
+            />
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-coffee-600 via-coffee-700 to-coffee-800" />
+          )}
+          {/* Dark Gradient Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent" />
+          
+          {/* Text Content */}
+          <div className="absolute inset-0 flex items-center">
+            <div className="container mx-auto px-4">
+              <motion.div
+                initial={{ opacity: 0, x: -30 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6 }}
+                className="max-w-xl"
+              >
+                <h1 className="text-4xl lg:text-5xl xl:text-6xl font-bold text-white mb-4 leading-tight">
+                  Чанартай <span className="text-coffee-300">цаасан аяга</span>
+                </h1>
+                <p className="text-lg lg:text-xl text-white/80 mb-6">
+                  Кафе, ресторанд зориулсан бүтээгдэхүүн. Бөөний болон жижиглэнгийн худалдаа.
+                </p>
+                <div className="flex gap-4">
+                  <Link href="/products">
+                    <Button size="lg" className="group bg-coffee-500 hover:bg-coffee-400">
+                      Бүтээгдэхүүн үзэх
+                      <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    </Button>
+                  </Link>
+                  <Link href="#categories">
+                    <Button size="lg" variant="outline" className="border-white/50 text-white hover:bg-white/10">
+                      Ангилал
+                    </Button>
+                  </Link>
+                </div>
+              </motion.div>
             </div>
-            
-            {/* Featured Products Right - 2x2 Grid */}
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-coffee-800 text-xl lg:text-2xl">Онцлох бараа</h3>
-                <Link href="/products" className="text-coffee-500 hover:text-coffee-600 flex items-center gap-1 font-medium">
-                  Бүгдийг үзэх <ArrowRight className="w-5 h-5" />
-                </Link>
-              </div>
-              <div className="grid grid-cols-2 gap-4 h-[calc(100%-40px)]">
-                {featuredProducts.slice(0, 4).map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
+          </div>
+        </div>
+
+        {/* Featured Products - Horizontal Scroll */}
+        <div className="bg-white py-8 border-b border-coffee-200">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="font-bold text-coffee-800 text-2xl">Онцлох бараа</h3>
+              <Link href="/products" className="text-coffee-500 hover:text-coffee-600 flex items-center gap-1 font-medium">
+                Бүгдийг үзэх <ArrowRight className="w-5 h-5" />
+              </Link>
+            </div>
+            <div className="grid grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+              {featuredProducts.slice(0, 6).map((product, index) => (
+                <motion.div
+                  key={product.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <ProductCard product={product} />
+                </motion.div>
+              ))}
             </div>
           </div>
         </div>
@@ -169,17 +208,17 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Text & Button Section */}
-      <section className="bg-cream-50 py-8 md:py-12 text-center">
+      {/* Text & Button Section - Mobile Only */}
+      <section className="md:hidden bg-cream-50 py-8 text-center">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="container mx-auto px-4"
         >
-          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-coffee-800 mb-3">
+          <h1 className="text-2xl font-bold text-coffee-800 mb-3">
             Чанартай <span className="text-coffee-500">цаасан аяга</span>
           </h1>
-          <p className="text-coffee-600 mb-4 md:mb-6 max-w-lg mx-auto text-sm md:text-base">
+          <p className="text-coffee-600 mb-4 max-w-lg mx-auto text-sm">
             Кафе, ресторанд зориулсан бүтээгдэхүүн
           </p>
           <Link href="/products">
