@@ -17,13 +17,17 @@ export function Footer() {
             </p>
             <div className="flex space-x-3">
               <a
-                href="#"
+                href="https://www.facebook.com/profile.php?id=100075917394135"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="p-2 rounded-lg bg-coffee-800 text-coffee-400 hover:text-coffee-100 transition-colors"
               >
                 <Facebook className="w-5 h-5" />
               </a>
               <a
-                href="#"
+                href="https://www.instagram.com/cood_cup_coffee/"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="p-2 rounded-lg bg-coffee-800 text-coffee-400 hover:text-coffee-100 transition-colors"
               >
                 <Instagram className="w-5 h-5" />
@@ -86,11 +90,11 @@ export function Footer() {
             <ul className="space-y-3">
               <li className="flex items-center space-x-3 text-coffee-400 text-sm">
                 <Phone className="w-4 h-4" />
-                <span>9911-1234</span>
+                <a href="tel:99072049" className="hover:text-coffee-200">99072049</a>
               </li>
               <li className="flex items-center space-x-3 text-coffee-400 text-sm">
                 <Mail className="w-4 h-4" />
-                <span>info@goodcup.mn</span>
+                <a href="mailto:Speedlinedevelopment@gmail.com" className="hover:text-coffee-200">Speedlinedevelopment@gmail.com</a>
               </li>
               <li className="flex items-start space-x-3 text-coffee-400 text-sm">
                 <MapPin className="w-4 h-4 mt-0.5" />

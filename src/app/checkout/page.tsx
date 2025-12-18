@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, MapPin, User, Copy, Check, CreditCard, Building, Loader2 } from 'lucide-react';
+import { ArrowLeft, MapPin, User, Copy, Check, CreditCard, Building, Loader2, AlertTriangle, Truck, Package } from 'lucide-react';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useCartStore } from '@/store/cartStore';
@@ -30,11 +30,14 @@ export default function CheckoutPage() {
   });
   
   const [loading, setLoading] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentRef, setPaymentRef] = useState('');
   const [orderId, setOrderId] = useState('');
   const [copied, setCopied] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [pendingSubmit, setPendingSubmit] = useState(false);
   
   const total = getTotal();
   const deliveryInfo = getDeliveryMessage();
@@ -150,7 +153,8 @@ export default function CheckoutPage() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Show terms modal first
+  const handlePaymentClick = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (total < MINIMUM_ORDER_AMOUNT) {
@@ -163,6 +167,24 @@ export default function CheckoutPage() {
       return;
     }
 
+    // Show terms modal
+    setShowTermsModal(true);
+    setTermsAccepted(false);
+  };
+
+  // Accept terms and proceed to create order
+  const handleAcceptTerms = async () => {
+    if (!termsAccepted) {
+      toast.error('Нөхцөлүүдийг зөвшөөрнө үү');
+      return;
+    }
+
+    setShowTermsModal(false);
+    setPendingSubmit(true);
+    await createOrder();
+  };
+
+  const createOrder = async () => {
     setLoading(true);
 
     try {
@@ -206,6 +228,7 @@ export default function CheckoutPage() {
       toast.error('Захиалга үүсгэхэд алдаа гарлаа');
     } finally {
       setLoading(false);
+      setPendingSubmit(false);
     }
   };
 
@@ -260,7 +283,7 @@ export default function CheckoutPage() {
             animate={{ opacity: 1, y: 0 }}
             className="lg:col-span-2"
           >
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handlePaymentClick} className="space-y-6">
               {/* Customer Info */}
               <div className="bg-coffee-900 rounded-2xl p-6 border border-coffee-800">
                 <h2 className="text-lg font-semibold text-coffee-100 mb-4 flex items-center">
@@ -351,9 +374,9 @@ export default function CheckoutPage() {
                 type="submit"
                 className="w-full"
                 size="lg"
-                disabled={loading || total < MINIMUM_ORDER_AMOUNT}
+                disabled={loading || pendingSubmit || total < MINIMUM_ORDER_AMOUNT}
               >
-                {loading ? (
+                {loading || pendingSubmit ? (
                   <>
                     <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                     Захиалга үүсгэж байна...
@@ -420,6 +443,81 @@ export default function CheckoutPage() {
           </motion.div>
         </div>
       </div>
+
+      {/* Terms & Conditions Modal */}
+      <Modal
+        isOpen={showTermsModal}
+        onClose={() => setShowTermsModal(false)}
+        title="Нөхцөлүүдтэй танилцана уу"
+        size="md"
+      >
+        <div className="space-y-6">
+          {/* Delivery Terms */}
+          <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
+            <div className="flex items-center mb-3">
+              <Truck className="w-5 h-5 text-blue-400 mr-2" />
+              <span className="text-blue-300 font-semibold">Хүргэлтийн нөхцөл</span>
+            </div>
+            <ul className="space-y-2 text-coffee-300 text-sm">
+              <li className="flex items-start">
+                <span className="text-blue-400 mr-2">•</span>
+                Даваа-Баасан гарагт өдөр бүр 11:00 цагт хүргэлт гарна.
+              </li>
+              <li className="flex items-start">
+                <span className="text-blue-400 mr-2">•</span>
+                11 цагаас хойш хийгдсэн захиалга дараа өдөрт хүргэгдэнэ.
+              </li>
+            </ul>
+          </div>
+
+          {/* Service Terms */}
+          <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-4">
+            <div className="flex items-center mb-3">
+              <Package className="w-5 h-5 text-orange-400 mr-2" />
+              <span className="text-orange-300 font-semibold">Үйлчилгээний нөхцөл</span>
+            </div>
+            <div className="flex items-start text-coffee-300 text-sm">
+              <AlertTriangle className="w-4 h-4 text-orange-400 mr-2 mt-0.5 shrink-0" />
+              <p>
+                Нэг удаагийн хэрэгсэл нь задлах, буцаах боломжгүй байдаг тул та аяганы хэмжээ болон загвараа зөв сонгоно уу!!! Таньд амжилт хүсье.
+              </p>
+            </div>
+          </div>
+
+          {/* Accept Checkbox */}
+          <div className="bg-coffee-800 rounded-xl p-4">
+            <label className="flex items-start cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={termsAccepted}
+                onChange={(e) => setTermsAccepted(e.target.checked)}
+                className="w-5 h-5 rounded border-coffee-600 bg-coffee-900 text-coffee-500 focus:ring-coffee-500 focus:ring-offset-0 mt-0.5 shrink-0"
+              />
+              <span className="ml-3 text-coffee-200 text-sm group-hover:text-coffee-100 transition-colors">
+                Дээрх нөхцөлүүдтэй танилцаж, зөвшөөрч байна
+              </span>
+            </label>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setShowTermsModal(false)}
+            >
+              Буцах
+            </Button>
+            <Button
+              className="flex-1"
+              onClick={handleAcceptTerms}
+              disabled={!termsAccepted}
+            >
+              Зөвшөөрч үргэлжлүүлэх
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Payment Modal */}
       <Modal
