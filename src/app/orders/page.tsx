@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Package, Clock, Check, Truck, X, Copy, CreditCard, Loader2 } from 'lucide-react';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { Package, Clock, Check, Truck, X, Copy, CreditCard, RefreshCw, Loader2 } from 'lucide-react';
+import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Order } from '@/types';
 import { useAuthStore } from '@/store/authStore';
@@ -11,7 +11,6 @@ import { formatPrice } from '@/lib/utils';
 import { Badge, Button, Modal } from '@/components/ui';
 import { BANK_ACCOUNTS } from '@/lib/constants';
 import toast from 'react-hot-toast';
-import confetti from 'canvas-confetti';
 
 const statusConfig = {
   Pending: { label: 'Хүлээгдэж буй', color: 'warning', icon: Clock },
@@ -31,65 +30,33 @@ const paymentStatusConfig = {
 export default function OrdersPage() {
   const { user } = useAuthStore();
   const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    if (user?.email) {
-      fetchOrders();
-    } else {
-      setLoading(false);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  // Compute loading state based on user and data status
+  const isLoading = useMemo(() => {
+    if (!user?.email) return false;
+    return !dataLoaded;
+  }, [user?.email, dataLoaded]);
 
-  // Polling for payment status
+  // Real-time listener for orders
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    
-    if (user?.email && orders.some(o => o.paymentStatus === 'Pending')) {
-      interval = setInterval(async () => {
-        const pendingOrders = orders.filter(o => o.paymentStatus === 'Pending');
-        
-        for (const order of pendingOrders) {
-          try {
-            const response = await fetch(`/api/payment/status/${order.id}`);
-            const data = await response.json();
-            
-            if (data.paymentStatus === 'Paid') {
-              setOrders(prev => prev.map(o => 
-                o.id === order.id ? { ...o, paymentStatus: 'Paid', status: 'Processing' } : o
-              ));
-              confetti({
-                particleCount: 100,
-                spread: 70,
-                origin: { y: 0.6 }
-              });
-              toast.success(`Захиалга #${order.paymentRef} төлөгдлөө!`);
-            }
-          } catch (error) {
-            console.error('Error checking payment status:', error);
-          }
-        }
-      }, 5000);
+    if (!user?.email) {
+      // Use setTimeout to avoid synchronous setState warning
+      const timer = setTimeout(() => setDataLoaded(true), 0);
+      return () => clearTimeout(timer);
     }
 
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [orders, user]);
+    const ordersRef = collection(db, 'orders');
+    const q = query(
+      ordersRef,
+      where('customerEmail', '==', user.email),
+      orderBy('createdAt', 'desc')
+    );
 
-  const fetchOrders = async () => {
-    try {
-      const ordersRef = collection(db, 'orders');
-      const q = query(
-        ordersRef,
-        where('customerEmail', '==', user?.email),
-        orderBy('createdAt', 'desc')
-      );
-      const snapshot = await getDocs(q);
+    const unsubscribe = onSnapshot(q, (snapshot) => {
       const ordersList = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
@@ -99,12 +66,14 @@ export default function OrdersPage() {
       })) as Order[];
       
       setOrders(ordersList);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching orders:', error);
-      setLoading(false);
-    }
-  };
+      setDataLoaded(true);
+    }, (error) => {
+      console.error('Error listening to orders:', error);
+      setDataLoaded(true);
+    });
+
+    return () => unsubscribe();
+  }, [user?.email]);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -150,7 +119,7 @@ export default function OrdersPage() {
           </p>
         </motion.div>
 
-        {loading ? (
+        {isLoading ? (
           <div className="space-y-4">
             {[...Array(3)].map((_, i) => (
               <div key={i} className="bg-coffee-900 rounded-2xl h-32 animate-pulse" />
@@ -242,18 +211,42 @@ export default function OrdersPage() {
 
                     {/* Actions */}
                     {order.paymentStatus === 'Pending' && (
-                      <div className="flex items-center justify-between pt-4 border-t border-coffee-800">
-                        <div className="flex items-center text-orange-400 text-sm">
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Төлбөр хүлээж байна
+                      <div className="bg-gradient-to-r from-orange-500/10 to-yellow-500/10 border border-orange-500/30 rounded-xl p-4 mt-4">
+                        <div className="flex items-center justify-between flex-wrap gap-3">
+                          <div className="flex items-center text-orange-400">
+                            <motion.div
+                              animate={{ rotate: 360 }}
+                              transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                            >
+                              <RefreshCw className="w-5 h-5 mr-2" />
+                            </motion.div>
+                            <div>
+                              <p className="font-medium">Төлбөр хүлээгдэж байна</p>
+                              <p className="text-xs text-orange-300/70">Автоматаар шалгаж байна...</p>
+                            </div>
+                          </div>
+                          <Button
+                            size="sm"
+                            onClick={() => openPaymentModal(order)}
+                            className="bg-orange-500 hover:bg-orange-600"
+                          >
+                            <CreditCard className="w-4 h-4 mr-2" />
+                            Дансны мэдээлэл
+                          </Button>
                         </div>
-                        <Button
-                          size="sm"
-                          onClick={() => openPaymentModal(order)}
-                        >
-                          <CreditCard className="w-4 h-4 mr-2" />
-                          Төлбөр төлөх
-                        </Button>
+                      </div>
+                    )}
+
+                    {/* Paid confirmation */}
+                    {order.paymentStatus === 'Paid' && order.status === 'Processing' && (
+                      <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-xl p-4 mt-4">
+                        <div className="flex items-center text-green-400">
+                          <Check className="w-5 h-5 mr-2" />
+                          <div>
+                            <p className="font-medium">Төлбөр амжилттай!</p>
+                            <p className="text-xs text-green-300/70">Захиалга боловсруулагдаж байна</p>
+                          </div>
+                        </div>
                       </div>
                     )}
                   </div>

@@ -1,19 +1,18 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, MapPin, User, Copy, Check, CreditCard, Building, Loader2, AlertTriangle, Truck, Package } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { ArrowLeft, MapPin, User, CreditCard, Loader2, AlertTriangle, Truck, Package } from 'lucide-react';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useCartStore } from '@/store/cartStore';
 import { useAuthStore } from '@/store/authStore';
 import { formatPrice, getDeliveryMessage } from '@/lib/utils';
-import { UB_DISTRICTS, BANK_ACCOUNTS, MINIMUM_ORDER_AMOUNT } from '@/lib/constants';
+import { UB_DISTRICTS, MINIMUM_ORDER_AMOUNT } from '@/lib/constants';
 import { Button, Input, Select, Modal } from '@/components/ui';
 import toast from 'react-hot-toast';
-import confetti from 'canvas-confetti';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -32,11 +31,6 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [paymentRef, setPaymentRef] = useState('');
-  const [orderId, setOrderId] = useState('');
-  const [copied, setCopied] = useState(false);
-  const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [pendingSubmit, setPendingSubmit] = useState(false);
   
   const total = getTotal();
@@ -52,101 +46,6 @@ export default function CheckoutPage() {
       }));
     }
   }, [user]);
-
-  // Send confirmation email
-  const sendConfirmationEmail = useCallback(async (orderData: {
-    id: string;
-    items: typeof items;
-    total: number;
-    customerName: string;
-    customerPhone: string;
-    customerEmail: string;
-    deliveryAddress: string;
-    deliveryDistrict: string;
-    notes: string;
-    paymentRef: string;
-    createdAt: Date;
-  }) => {
-    try {
-      const emailOrder = {
-        id: orderData.id,
-        items: orderData.items.map(item => ({
-          productId: item.productId,
-          productName: item.name,
-          quantity: item.quantity,
-          price: item.price,
-          size: item.size,
-          imageUrl: item.imageUrl,
-        })),
-        total: orderData.total,
-        customerName: orderData.customerName,
-        customerPhone: orderData.customerPhone,
-        customerEmail: orderData.customerEmail,
-        deliveryAddress: orderData.deliveryAddress,
-        deliveryDistrict: orderData.deliveryDistrict,
-        notes: orderData.notes,
-        status: 'Pending',
-        paymentStatus: 'Paid',
-        paymentRef: orderData.paymentRef,
-        createdAt: orderData.createdAt,
-        updatedAt: new Date(),
-      };
-
-      await fetch('/api/email/send-order-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ order: emailOrder }),
-      });
-      
-      toast.success('Баталгаажуулах мэйл илгээгдлээ!');
-    } catch (error) {
-      console.error('Error sending confirmation email:', error);
-    }
-  }, []);
-
-  // Polling for payment status
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    
-    if (orderId && showPaymentModal && !paymentSuccess) {
-      interval = setInterval(async () => {
-        try {
-          const response = await fetch(`/api/payment/status/${orderId}`);
-          const data = await response.json();
-          
-          if (data.paymentStatus === 'Paid') {
-            setPaymentSuccess(true);
-            confetti({
-              particleCount: 100,
-              spread: 70,
-              origin: { y: 0.6 }
-            });
-            
-            // Send confirmation email
-            sendConfirmationEmail({
-              id: orderId,
-              items,
-              total,
-              customerName: formData.customerName,
-              customerPhone: formData.customerPhone,
-              customerEmail: formData.customerEmail,
-              deliveryAddress: formData.deliveryAddress,
-              deliveryDistrict: formData.deliveryDistrict,
-              notes: formData.notes,
-              paymentRef,
-              createdAt: new Date(),
-            });
-          }
-        } catch (error) {
-          console.error('Error checking payment status:', error);
-        }
-      }, 5000);
-    }
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [orderId, showPaymentModal, paymentSuccess, items, total, formData, paymentRef, sendConfirmationEmail]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -217,11 +116,12 @@ export default function CheckoutPage() {
         updatedAt: new Date(),
       };
 
-      const docRef = await addDoc(collection(db, 'orders'), orderData);
+      await addDoc(collection(db, 'orders'), orderData);
       
-      setOrderId(docRef.id);
-      setPaymentRef(ref);
-      setShowPaymentModal(true);
+      // Clear cart and redirect to orders page
+      clearCart();
+      toast.success('Захиалга амжилттай үүслээ!');
+      router.push('/orders');
       
     } catch (error) {
       console.error('Error creating order:', error);
@@ -230,18 +130,6 @@ export default function CheckoutPage() {
       setLoading(false);
       setPendingSubmit(false);
     }
-  };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    toast.success('Хуулагдлаа');
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handlePaymentComplete = () => {
-    clearCart();
-    router.push('/orders');
   };
 
   if (items.length === 0) {
@@ -517,110 +405,6 @@ export default function CheckoutPage() {
             </Button>
           </div>
         </div>
-      </Modal>
-
-      {/* Payment Modal */}
-      <Modal
-        isOpen={showPaymentModal}
-        onClose={() => !paymentSuccess && setShowPaymentModal(false)}
-        title={paymentSuccess ? 'Төлбөр амжилттай!' : 'Төлбөр төлөх'}
-        size="md"
-      >
-        <AnimatePresence mode="wait">
-          {paymentSuccess ? (
-            <motion.div
-              key="success"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="text-center py-6"
-            >
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: 'spring', delay: 0.2 }}
-                className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6"
-              >
-                <Check className="w-10 h-10 text-white" />
-              </motion.div>
-              
-              <h3 className="text-xl font-bold text-coffee-100 mb-2">
-                Баярлалаа!
-              </h3>
-              <p className="text-coffee-400 mb-6">
-                Таны төлбөр амжилттай баталгаажлаа. {deliveryInfo.message}
-              </p>
-              
-              <Button onClick={handlePaymentComplete} className="w-full">
-                Ойлголоо
-              </Button>
-            </motion.div>
-          ) : (
-            <motion.div
-              key="payment"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="space-y-6"
-            >
-              {/* Bank Info */}
-              <div className="bg-coffee-800 rounded-xl p-4">
-                <div className="flex items-center mb-3">
-                  <Building className="w-5 h-5 text-coffee-400 mr-2" />
-                  <span className="text-coffee-200 font-medium">{BANK_ACCOUNTS.khan.bankName}</span>
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-coffee-400">Дансны дугаар</span>
-                    <button
-                      onClick={() => copyToClipboard(BANK_ACCOUNTS.khan.accountNumber)}
-                      className="flex items-center text-coffee-100 hover:text-coffee-300"
-                    >
-                      {BANK_ACCOUNTS.khan.accountNumber}
-                      {copied ? <Check className="w-4 h-4 ml-2 text-green-400" /> : <Copy className="w-4 h-4 ml-2" />}
-                    </button>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-coffee-400">Дансны нэр</span>
-                    <span className="text-coffee-100">{BANK_ACCOUNTS.khan.accountName}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-coffee-400">Дүн</span>
-                    <span className="text-coffee-100 font-bold">{formatPrice(total)}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Payment Reference */}
-              <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-4">
-                <p className="text-orange-400 text-sm mb-2">
-                  ⚠️ Гүйлгээний утга дээр дараах кодыг бичнэ үү:
-                </p>
-                <div className="flex items-center justify-between bg-coffee-900 rounded-lg p-3">
-                  <span className="text-2xl font-bold text-coffee-100 font-mono">
-                    {paymentRef}
-                  </span>
-                  <button
-                    onClick={() => copyToClipboard(paymentRef)}
-                    className="p-2 text-coffee-400 hover:text-coffee-100 hover:bg-coffee-800 rounded-lg transition-colors"
-                  >
-                    {copied ? <Check className="w-5 h-5 text-green-400" /> : <Copy className="w-5 h-5" />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Status */}
-              <div className="text-center">
-                <div className="flex items-center justify-center text-coffee-400">
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  <span>Төлбөр хүлээж байна...</span>
-                </div>
-                <p className="text-coffee-500 text-sm mt-2">
-                  Төлбөр төлсний дараа автоматаар баталгаажна
-                </p>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </Modal>
     </div>
   );

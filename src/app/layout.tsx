@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { Toaster } from "react-hot-toast";
-import { Header, Footer } from "@/components/layout";
+import { Header, Footer, ClientProviders } from "@/components/layout";
 import { FloatingCart } from "@/components/cart";
 import "./globals.css";
 
@@ -35,29 +34,7 @@ export default function RootLayout({
         <main className="flex-1">{children}</main>
         <Footer />
         <FloatingCart />
-        <Toaster
-          position="bottom-center"
-          toastOptions={{
-            duration: 3000,
-            style: {
-              background: '#3d322d',
-              color: '#f5ebe6',
-              border: '1px solid #5a3e2b',
-            },
-            success: {
-              iconTheme: {
-                primary: '#4CAF50',
-                secondary: '#f5ebe6',
-              },
-            },
-            error: {
-              iconTheme: {
-                primary: '#F44336',
-                secondary: '#f5ebe6',
-              },
-            },
-          }}
-        />
+        <ClientProviders>{null}</ClientProviders>
       </body>
     </html>
   );
