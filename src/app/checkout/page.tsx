@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -50,6 +50,57 @@ export default function CheckoutPage() {
     }
   }, [user]);
 
+  // Send confirmation email
+  const sendConfirmationEmail = useCallback(async (orderData: {
+    id: string;
+    items: typeof items;
+    total: number;
+    customerName: string;
+    customerPhone: string;
+    customerEmail: string;
+    deliveryAddress: string;
+    deliveryDistrict: string;
+    notes: string;
+    paymentRef: string;
+    createdAt: Date;
+  }) => {
+    try {
+      const emailOrder = {
+        id: orderData.id,
+        items: orderData.items.map(item => ({
+          productId: item.productId,
+          productName: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          size: item.size,
+          imageUrl: item.imageUrl,
+        })),
+        total: orderData.total,
+        customerName: orderData.customerName,
+        customerPhone: orderData.customerPhone,
+        customerEmail: orderData.customerEmail,
+        deliveryAddress: orderData.deliveryAddress,
+        deliveryDistrict: orderData.deliveryDistrict,
+        notes: orderData.notes,
+        status: 'Pending',
+        paymentStatus: 'Paid',
+        paymentRef: orderData.paymentRef,
+        createdAt: orderData.createdAt,
+        updatedAt: new Date(),
+      };
+
+      await fetch('/api/email/send-order-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order: emailOrder }),
+      });
+      
+      toast.success('Баталгаажуулах мэйл илгээгдлээ!');
+    } catch (error) {
+      console.error('Error sending confirmation email:', error);
+    }
+  }, []);
+
   // Polling for payment status
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -67,6 +118,21 @@ export default function CheckoutPage() {
               spread: 70,
               origin: { y: 0.6 }
             });
+            
+            // Send confirmation email
+            sendConfirmationEmail({
+              id: orderId,
+              items,
+              total,
+              customerName: formData.customerName,
+              customerPhone: formData.customerPhone,
+              customerEmail: formData.customerEmail,
+              deliveryAddress: formData.deliveryAddress,
+              deliveryDistrict: formData.deliveryDistrict,
+              notes: formData.notes,
+              paymentRef,
+              createdAt: new Date(),
+            });
           }
         } catch (error) {
           console.error('Error checking payment status:', error);
@@ -77,7 +143,7 @@ export default function CheckoutPage() {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [orderId, showPaymentModal, paymentSuccess]);
+  }, [orderId, showPaymentModal, paymentSuccess, items, total, formData, paymentRef, sendConfirmationEmail]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;

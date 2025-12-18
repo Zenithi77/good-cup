@@ -30,12 +30,29 @@ export default function HomePage() {
   const [categoryImages, setCategoryImages] = useState<CategoryImages>({});
   const [currentSlide, setCurrentSlide] = useState(0);
 
+  const [mounted, setMounted] = useState(false);
+  const [desktopSlide, setDesktopSlide] = useState(0);
+
+  // Fix hydration error - wait for client mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Auto slide for mobile featured products
   useEffect(() => {
     if (featuredProducts.length === 0) return;
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % featuredProducts.length);
     }, 4000); // 4 seconds per slide
+    return () => clearInterval(timer);
+  }, [featuredProducts.length]);
+
+  // Auto slide for desktop featured products
+  useEffect(() => {
+    if (featuredProducts.length === 0) return;
+    const timer = setInterval(() => {
+      setDesktopSlide((prev) => (prev + 1) % featuredProducts.length);
+    }, 3500); // 3.5 seconds per slide
     return () => clearInterval(timer);
   }, [featuredProducts.length]);
 
@@ -100,81 +117,130 @@ export default function HomePage() {
     { icon: Headphones, title: 'Тусламж 24/7', description: 'Хэзээ ч холбогдоорой' }
   ];
 
+  // Prevent hydration mismatch
+  if (!mounted) {
+    return (
+      <div className="min-h-screen">
+        <div className="h-[500px] bg-coffee-100 animate-pulse" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen">
-      {/* Desktop: Full Width Hero Banner */}
-      <section className="hidden md:block relative">
-        {/* Full Width Banner - Larger Height */}
-        <div className="relative h-[80vh] min-h-[600px] max-h-[800px] w-full overflow-hidden">
-          {banner.desktop ? (
-            <Image
-              src={banner.desktop}
-              alt="Good Cup Banner"
-              fill
-              className="object-cover object-center"
-              priority
-              sizes="100vw"
-              quality={90}
-            />
-          ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-coffee-600 via-coffee-700 to-coffee-800" />
-          )}
-          {/* Subtle bottom gradient for text readability */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-          
-          {/* Text Content - Bottom Left */}
-          <div className="absolute inset-0 flex items-end pb-16 lg:pb-20">
-            <div className="container mx-auto px-6 lg:px-8">
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-                className="max-w-2xl"
-              >
-                <h1 className="text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-3 leading-tight drop-shadow-lg">
-                  Чанартай <span className="text-coffee-300">цаасан аяга</span>
-                </h1>
-                <p className="text-base lg:text-lg text-white/90 mb-5 drop-shadow-md">
-                  Кафе, ресторанд зориулсан бүтээгдэхүүн. Бөөний болон жижиглэнгийн худалдаа.
-                </p>
-                <div className="flex gap-3">
-                  <Link href="/products">
-                    <Button size="lg" className="group bg-coffee-500 hover:bg-coffee-400 shadow-lg">
-                      Бүтээгдэхүүн үзэх
-                      <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                    </Button>
-                  </Link>
-                  <Link href="#categories">
-                    <Button size="lg" variant="outline" className="border-white/70 text-white hover:bg-white/20 shadow-lg">
-                      Ангилал
-                    </Button>
-                  </Link>
+      {/* Desktop: Banner + Featured Products Side by Side */}
+      <section className="hidden md:block bg-white">
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex gap-6">
+            {/* Left: Banner 1200x500 */}
+            <div className="flex-1">
+              <div className="relative w-full h-[500px] rounded-2xl overflow-hidden shadow-lg">
+                {banner.desktop ? (
+                  <Image
+                    src={banner.desktop}
+                    alt="Good Cup Banner"
+                    fill
+                    className="object-cover object-center"
+                    priority
+                    sizes="(max-width: 1280px) 70vw, 900px"
+                    quality={90}
+                  />
+                ) : (
+                  <div className="absolute inset-0 bg-gradient-to-br from-coffee-600 via-coffee-700 to-coffee-800" />
+                )}
+                {/* Subtle gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                
+                {/* Text Content - Bottom Left */}
+                <div className="absolute bottom-0 left-0 right-0 p-6 lg:p-8">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6 }}
+                  >
+                    <h1 className="text-2xl lg:text-3xl xl:text-4xl font-bold text-white mb-2 leading-tight drop-shadow-lg">
+                      Чанартай <span className="text-coffee-300">цаасан аяга</span>
+                    </h1>
+                    <p className="text-sm lg:text-base text-white/90 mb-4 drop-shadow-md max-w-md">
+                      Кафе, ресторанд зориулсан бүтээгдэхүүн
+                    </p>
+                    <div className="flex gap-3">
+                      <Link href="/products">
+                        <Button size="default" className="group bg-coffee-500 hover:bg-coffee-400 shadow-lg">
+                          Бүтээгдэхүүн үзэх
+                          <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                        </Button>
+                      </Link>
+                      <Link href="#categories">
+                        <Button size="default" variant="outline" className="border-white/70 text-white hover:bg-white/20 shadow-lg">
+                          Ангилал
+                        </Button>
+                      </Link>
+                    </div>
+                  </motion.div>
                 </div>
-              </motion.div>
+              </div>
             </div>
-          </div>
-        </div>
 
-        {/* Featured Products - Horizontal Scroll */}
-        <div className="bg-white py-8 border-b border-coffee-200">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="font-bold text-coffee-800 text-2xl">Онцлох бараа</h3>
-              <Link href="/products" className="text-coffee-500 hover:text-coffee-600 flex items-center gap-1 font-medium">
-                Бүгдийг үзэх <ArrowRight className="w-5 h-5" />
-              </Link>
-            </div>
-            <div className="grid grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-              {featuredProducts.slice(0, 6).map((product, index) => (
-                <motion.div
-                  key={product.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <ProductCard product={product} />
-                </motion.div>
-              ))}
+            {/* Right: Featured Products Slider */}
+            <div className="w-[320px] lg:w-[380px] flex flex-col">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-coffee-800 text-lg">Онцлох бараа</h3>
+                <Link href="/products" className="text-coffee-500 hover:text-coffee-600 flex items-center gap-1 text-sm font-medium">
+                  Бүгдийг үзэх <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+              
+              {/* Slider Container */}
+              <div className="flex-1 relative bg-coffee-50 rounded-2xl p-4 shadow-sm border border-coffee-100">
+                <div className="relative h-[400px] overflow-hidden">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={desktopSlide}
+                      initial={{ opacity: 0, x: 100 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -100 }}
+                      transition={{ duration: 0.4, ease: "easeInOut" }}
+                      className="h-full"
+                    >
+                      {featuredProducts[desktopSlide] && (
+                        <ProductCard product={featuredProducts[desktopSlide]} variant="large" />
+                      )}
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
+
+                {/* Navigation Arrows */}
+                <div className="absolute top-1/2 -translate-y-1/2 left-2 right-2 flex justify-between pointer-events-none">
+                  <button
+                    onClick={() => setDesktopSlide((prev) => (prev - 1 + featuredProducts.length) % featuredProducts.length)}
+                    className="pointer-events-auto w-8 h-8 rounded-full bg-white/90 shadow-md flex items-center justify-center hover:bg-white transition-colors"
+                  >
+                    <ChevronLeft className="w-5 h-5 text-coffee-700" />
+                  </button>
+                  <button
+                    onClick={() => setDesktopSlide((prev) => (prev + 1) % featuredProducts.length)}
+                    className="pointer-events-auto w-8 h-8 rounded-full bg-white/90 shadow-md flex items-center justify-center hover:bg-white transition-colors"
+                  >
+                    <ChevronRight className="w-5 h-5 text-coffee-700" />
+                  </button>
+                </div>
+
+                {/* Dots Indicator */}
+                <div className="flex justify-center gap-2 mt-4">
+                  {featuredProducts.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setDesktopSlide(index)}
+                      className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                        index === desktopSlide 
+                          ? 'bg-coffee-500 w-6' 
+                          : 'bg-coffee-300 hover:bg-coffee-400'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>

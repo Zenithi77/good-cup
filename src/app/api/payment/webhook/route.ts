@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { sendOrderSuccessEmail } from '@/lib/email';
+import { Order } from '@/types';
 
 const VALID_POSTKEY = process.env.PAYMENT_WEBHOOK_KEY || '789456123';
 
@@ -119,6 +121,32 @@ export async function POST(request: NextRequest) {
     });
     
     console.log('✅ Payment confirmed for order:', matchedOrderId);
+    
+    // Send confirmation email
+    try {
+      const orderForEmail: Order = {
+        id: matchedOrderId,
+        items: matchedOrder.items,
+        total: matchedOrder.total,
+        customerName: matchedOrder.customerName,
+        customerPhone: matchedOrder.customerPhone,
+        customerEmail: matchedOrder.customerEmail,
+        deliveryAddress: matchedOrder.deliveryAddress,
+        deliveryDistrict: matchedOrder.deliveryDistrict,
+        notes: matchedOrder.notes,
+        status: 'Processing',
+        paymentStatus: 'Paid',
+        paymentRef: matchedOrder.paymentRef,
+        createdAt: matchedOrder.createdAt?.toDate?.() || new Date(),
+        updatedAt: new Date(),
+      };
+      
+      await sendOrderSuccessEmail(orderForEmail);
+      console.log('✅ Confirmation email sent to:', matchedOrder.customerEmail);
+    } catch (emailError) {
+      console.error('⚠️ Failed to send confirmation email:', emailError);
+      // Don't fail the webhook response if email fails
+    }
     
     return NextResponse.json({ 
       success: true, 
