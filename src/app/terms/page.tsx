@@ -67,7 +67,7 @@ export default function TermsPage() {
             </section>
           </div>
 
-          <p className="text-sm text-coffee-400 mt-8">
+          <p className="text-sm text-coffee-500 mt-8">
             Сүүлд шинэчилсэн: 2025 оны 12-р сар
           </p>
         </motion.div>

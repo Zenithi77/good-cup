@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, Package, LogOut, MapPin, Phone, Mail, Edit, Save, X } from 'lucide-react';
+import { User, Package, LogOut, MapPin, Phone, Mail, Edit, Save, X, Lock, Eye, EyeOff } from 'lucide-react';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
+import { db, auth } from '@/lib/firebase';
 import { useAuthStore } from '@/store/authStore';
 import { Button, Input, Select } from '@/components/ui';
 import { UB_DISTRICTS } from '@/lib/constants';
@@ -32,6 +33,16 @@ export default function ProfilePage() {
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  
+  // Password change states
+  const [showPasswordSection, setShowPasswordSection] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
 
   const fetchProfile = useCallback(async () => {
     if (!user) return;
@@ -107,6 +118,64 @@ export default function ProfilePage() {
     }
   };
 
+  const handleChangePassword = async () => {
+    // Validation
+    if (!currentPassword) {
+      toast.error('Одоогийн нууц үг оруулна уу');
+      return;
+    }
+    if (!newPassword) {
+      toast.error('Шинэ нууц үг оруулна уу');
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.error('Нууц үг хамгийн багадаа 6 тэмдэгт байх ёстой');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error('Шинэ нууц үг таарахгүй байна');
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      const currentUser = auth.currentUser;
+      if (!currentUser || !currentUser.email) {
+        toast.error('Хэрэглэгч олдсонгүй');
+        return;
+      }
+
+      // Re-authenticate user
+      const credential = EmailAuthProvider.credential(currentUser.email, currentPassword);
+      await reauthenticateWithCredential(currentUser, credential);
+
+      // Update password
+      await updatePassword(currentUser, newPassword);
+
+      // Reset form
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setShowPasswordSection(false);
+      toast.success('Нууц үг амжилттай солигдлоо');
+    } catch (error: unknown) {
+      console.error('Password change error:', error);
+      if (error instanceof Error) {
+        if (error.message.includes('wrong-password') || error.message.includes('invalid-credential')) {
+          toast.error('Одоогийн нууц үг буруу байна');
+        } else if (error.message.includes('requires-recent-login')) {
+          toast.error('Дахин нэвтэрч орно уу');
+        } else {
+          toast.error('Нууц үг солиход алдаа гарлаа');
+        }
+      } else {
+        toast.error('Нууц үг солиход алдаа гарлаа');
+      }
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
   if (loading || loadingProfile || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -119,7 +188,7 @@ export default function ProfilePage() {
     <div className="min-h-screen py-8">
       <div className="container mx-auto px-4 max-w-2xl">
         <div className="mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold text-coffee-100">
+          <h1 className="text-2xl md:text-3xl font-bold text-white">
             Миний профайл
           </h1>
         </div>
@@ -212,33 +281,33 @@ export default function ProfilePage() {
             ) : (
               <div className="space-y-4">
                 <div className="flex items-center gap-3 p-3 bg-coffee-800 rounded-lg">
-                  <User className="w-5 h-5 text-coffee-400" />
+                  <User className="w-5 h-5 text-coffee-300" />
                   <div>
-                    <p className="text-coffee-400 text-sm">Нэр</p>
+                    <p className="text-coffee-300 text-sm">Нэр</p>
                     <p className="text-coffee-100">{profile.name || '-'}</p>
                   </div>
                 </div>
                 
                 <div className="flex items-center gap-3 p-3 bg-coffee-800 rounded-lg">
-                  <Mail className="w-5 h-5 text-coffee-400" />
+                  <Mail className="w-5 h-5 text-coffee-300" />
                   <div>
-                    <p className="text-coffee-400 text-sm">И-мэйл</p>
+                    <p className="text-coffee-300 text-sm">И-мэйл</p>
                     <p className="text-coffee-100">{profile.email}</p>
                   </div>
                 </div>
                 
                 <div className="flex items-center gap-3 p-3 bg-coffee-800 rounded-lg">
-                  <Phone className="w-5 h-5 text-coffee-400" />
+                  <Phone className="w-5 h-5 text-coffee-300" />
                   <div>
-                    <p className="text-coffee-400 text-sm">Утас</p>
+                    <p className="text-coffee-300 text-sm">Утас</p>
                     <p className="text-coffee-100">{profile.phone || '-'}</p>
                   </div>
                 </div>
                 
                 <div className="flex items-center gap-3 p-3 bg-coffee-800 rounded-lg">
-                  <MapPin className="w-5 h-5 text-coffee-400" />
+                  <MapPin className="w-5 h-5 text-coffee-300" />
                   <div>
-                    <p className="text-coffee-400 text-sm">Хаяг</p>
+                    <p className="text-coffee-300 text-sm">Хаяг</p>
                     <p className="text-coffee-100">
                       {profile.district && profile.address
                         ? `${profile.district}, ${profile.address}`
@@ -257,10 +326,98 @@ export default function ProfilePage() {
             onClick={() => router.push('/orders')}
             className="w-full flex items-center gap-3 p-4 bg-coffee-900 border border-coffee-800 rounded-xl hover:bg-coffee-800 transition-colors"
           >
-            <Package className="w-5 h-5 text-coffee-400" />
-            <span className="text-coffee-100 flex-1 text-left">Миний захиалгууд</span>
-            <span className="text-coffee-500">→</span>
+            <Package className="w-5 h-5 text-coffee-300" />
+            <span className="text-white flex-1 text-left">Миний захиалгууд</span>
+            <span className="text-coffee-300">→</span>
           </button>
+          
+          <button
+            onClick={() => setShowPasswordSection(!showPasswordSection)}
+            className="w-full flex items-center gap-3 p-4 bg-coffee-900 border border-coffee-800 rounded-xl hover:bg-coffee-800 transition-colors"
+          >
+            <Lock className="w-5 h-5 text-coffee-300" />
+            <span className="text-white flex-1 text-left">Нууц үг солих</span>
+            <span className="text-coffee-300">{showPasswordSection ? '−' : '→'}</span>
+          </button>
+
+          {/* Password Change Section */}
+          {showPasswordSection && (
+            <div className="bg-coffee-900 border border-coffee-800 rounded-xl p-6 space-y-4">
+              <h3 className="text-lg font-semibold text-white mb-4">Нууц үг солих</h3>
+              
+              <div className="relative">
+                <Input
+                  label="Одоогийн нууц үг"
+                  type={showCurrentPassword ? 'text' : 'password'}
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Одоогийн нууц үг"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  className="absolute right-3 top-9 text-coffee-400 hover:text-coffee-200"
+                >
+                  {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
+
+              <div className="relative">
+                <Input
+                  label="Шинэ нууц үг"
+                  type={showNewPassword ? 'text' : 'password'}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Шинэ нууц үг (6+ тэмдэгт)"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  className="absolute right-3 top-9 text-coffee-400 hover:text-coffee-200"
+                >
+                  {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
+
+              <div className="relative">
+                <Input
+                  label="Шинэ нууц үг давтах"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Шинэ нууц үг дахин оруулах"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-9 text-coffee-400 hover:text-coffee-200"
+                >
+                  {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <Button 
+                  onClick={handleChangePassword} 
+                  disabled={changingPassword}
+                  className="flex-1"
+                >
+                  {changingPassword ? 'Солиж байна...' : 'Нууц үг солих'}
+                </Button>
+                <Button
+                  onClick={() => {
+                    setShowPasswordSection(false);
+                    setCurrentPassword('');
+                    setNewPassword('');
+                    setConfirmPassword('');
+                  }}
+                  variant="outline"
+                >
+                  Болих
+                </Button>
+              </div>
+            </div>
+          )}
           
           <button
             onClick={handleSignOut}

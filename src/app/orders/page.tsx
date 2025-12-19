@@ -91,8 +91,8 @@ export default function OrdersPage() {
     return (
       <div className="min-h-screen py-8 flex items-center justify-center">
         <div className="text-center">
-          <Package className="w-16 h-16 text-coffee-600 mx-auto mb-4" />
-          <p className="text-coffee-400 text-lg mb-4">
+          <Package className="w-16 h-16 text-coffee-400 mx-auto mb-4" />
+          <p className="text-coffee-200 text-lg mb-4">
             Захиалга харахын тулд нэвтэрнэ үү
           </p>
           <Button onClick={() => window.location.href = '/login'}>
@@ -111,10 +111,10 @@ export default function OrdersPage() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h1 className="text-2xl md:text-3xl font-bold text-coffee-100 mb-2">
+          <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
             Миний захиалгууд
           </h1>
-          <p className="text-coffee-400">
+          <p className="text-coffee-200">
             Бүх захиалгын түүх
           </p>
         </motion.div>
@@ -127,11 +127,11 @@ export default function OrdersPage() {
           </div>
         ) : orders.length === 0 ? (
           <div className="text-center py-16">
-            <Package className="w-16 h-16 text-coffee-600 mx-auto mb-4" />
-            <p className="text-coffee-400 text-lg mb-2">
+            <Package className="w-16 h-16 text-coffee-400 mx-auto mb-4" />
+            <p className="text-coffee-200 text-lg mb-2">
               Захиалга байхгүй байна
             </p>
-            <p className="text-coffee-500 text-sm mb-6">
+            <p className="text-coffee-300 text-sm mb-6">
               Та анхны захиалгаа өгөөрэй
             </p>
             <Button onClick={() => window.location.href = '/products'}>
@@ -158,7 +158,7 @@ export default function OrdersPage() {
                     <div className="flex flex-wrap items-center justify-between gap-4">
                       <div>
                         <div className="flex items-center space-x-3 mb-2">
-                          <span className="text-coffee-400 text-sm">
+                          <span className="text-coffee-200 text-sm font-medium">
                             #{order.paymentRef || order.id.slice(-6).toUpperCase()}
                           </span>
                           <Badge variant={statusInfo?.color as 'success' | 'warning' | 'error' | 'info'}>
@@ -169,7 +169,7 @@ export default function OrdersPage() {
                             {paymentInfo?.label}
                           </Badge>
                         </div>
-                        <p className="text-coffee-500 text-sm">
+                        <p className="text-coffee-300 text-sm">
                           {order.createdAt?.toLocaleDateString('mn-MN', {
                             year: 'numeric',
                             month: 'long',
@@ -181,10 +181,10 @@ export default function OrdersPage() {
                       </div>
                       
                       <div className="text-right">
-                        <p className="text-coffee-100 font-bold text-lg">
+                        <p className="text-white font-bold text-lg">
                           {formatPrice(order.total)}
                         </p>
-                        <p className="text-coffee-400 text-sm">
+                        <p className="text-coffee-300 text-sm">
                           {order.items.length} бүтээгдэхүүн
                         </p>
                       </div>
@@ -197,13 +197,13 @@ export default function OrdersPage() {
                       {order.items.slice(0, 3).map((item, i) => (
                         <div
                           key={i}
-                          className="bg-coffee-800 rounded-lg px-3 py-1 text-sm text-coffee-300"
+                          className="bg-coffee-800 rounded-lg px-3 py-1.5 text-sm text-coffee-100"
                         >
                           {item.productName} ({item.size}) × {item.quantity}
                         </div>
                       ))}
                       {order.items.length > 3 && (
-                        <div className="bg-coffee-800 rounded-lg px-3 py-1 text-sm text-coffee-400">
+                        <div className="bg-coffee-800 rounded-lg px-3 py-1.5 text-sm text-coffee-200">
                           +{order.items.length - 3} бусад
                         </div>
                       )}

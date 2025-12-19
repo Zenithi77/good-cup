@@ -136,7 +136,7 @@ export default function CheckoutPage() {
     return (
       <div className="min-h-screen py-8 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-coffee-400 text-lg mb-4">Сагс хоосон байна</p>
+          <p className="text-coffee-200 text-lg mb-4">Сагс хоосон байна</p>
           <Button onClick={() => router.push('/products')}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Бүтээгдэхүүн үзэх
@@ -154,13 +154,13 @@ export default function CheckoutPage() {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           onClick={() => router.back()}
-          className="flex items-center text-coffee-400 hover:text-coffee-200 mb-6 transition-colors"
+          className="flex items-center text-coffee-300 hover:text-white mb-6 transition-colors"
         >
           <ArrowLeft className="w-5 h-5 mr-2" />
           Буцах
         </motion.button>
 
-        <h1 className="text-2xl md:text-3xl font-bold text-coffee-100 mb-8">
+        <h1 className="text-2xl md:text-3xl font-bold text-white mb-8">
           Захиалга баталгаажуулах
         </h1>
 
@@ -174,8 +174,8 @@ export default function CheckoutPage() {
             <form onSubmit={handlePaymentClick} className="space-y-6">
               {/* Customer Info */}
               <div className="bg-coffee-900 rounded-2xl p-6 border border-coffee-800">
-                <h2 className="text-lg font-semibold text-coffee-100 mb-4 flex items-center">
-                  <User className="w-5 h-5 mr-2 text-coffee-400" />
+                <h2 className="text-lg font-semibold text-white mb-4 flex items-center">
+                  <User className="w-5 h-5 mr-2 text-coffee-300" />
                   Хэрэглэгчийн мэдээлэл
                 </h2>
                 
@@ -213,8 +213,8 @@ export default function CheckoutPage() {
 
               {/* Delivery Info */}
               <div className="bg-coffee-900 rounded-2xl p-6 border border-coffee-800">
-                <h2 className="text-lg font-semibold text-coffee-100 mb-4 flex items-center">
-                  <MapPin className="w-5 h-5 mr-2 text-coffee-400" />
+                <h2 className="text-lg font-semibold text-white mb-4 flex items-center">
+                  <MapPin className="w-5 h-5 mr-2 text-coffee-300" />
                   Хүргэлтийн мэдээлэл
                 </h2>
 
@@ -286,7 +286,7 @@ export default function CheckoutPage() {
             transition={{ delay: 0.1 }}
           >
             <div className="bg-coffee-900 rounded-2xl p-6 border border-coffee-800 sticky top-24">
-              <h2 className="text-lg font-semibold text-coffee-100 mb-4">
+              <h2 className="text-lg font-semibold text-white mb-4">
                 Захиалгын дүн
               </h2>
 
@@ -303,9 +303,9 @@ export default function CheckoutPage() {
                       />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-coffee-100 text-sm line-clamp-1">{item.name}</p>
-                      <p className="text-coffee-400 text-xs">{item.size} × {item.quantity}</p>
-                      <p className="text-coffee-300 text-sm font-medium">
+                      <p className="text-white text-sm line-clamp-1">{item.name}</p>
+                      <p className="text-coffee-300 text-xs">{item.size} × {item.quantity}</p>
+                      <p className="text-coffee-200 text-sm font-medium">
                         {formatPrice(item.price * item.quantity)}
                       </p>
                     </div>
@@ -314,15 +314,15 @@ export default function CheckoutPage() {
               </div>
 
               <div className="border-t border-coffee-800 pt-4 space-y-2">
-                <div className="flex justify-between text-coffee-400">
+                <div className="flex justify-between text-coffee-300">
                   <span>Бүтээгдэхүүн</span>
                   <span>{formatPrice(total)}</span>
                 </div>
-                <div className="flex justify-between text-coffee-400">
+                <div className="flex justify-between text-coffee-300">
                   <span>Хүргэлт</span>
                   <span className="text-green-400">Үнэгүй</span>
                 </div>
-                <div className="flex justify-between text-coffee-100 font-semibold text-lg pt-2 border-t border-coffee-800">
+                <div className="flex justify-between text-white font-semibold text-lg pt-2 border-t border-coffee-800">
                   <span>Нийт</span>
                   <span>{formatPrice(total)}</span>
                 </div>
