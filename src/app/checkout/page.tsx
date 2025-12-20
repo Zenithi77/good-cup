@@ -152,7 +152,8 @@ export default function CheckoutPage() {
     router.push('/orders');
   };
 
-  if (items.length === 0) {
+  // Show empty cart message only if cart is empty AND payment modal is not showing
+  if (items.length === 0 && !showPaymentModal) {
     return (
       <div className="min-h-screen py-8 flex items-center justify-center">
         <div className="text-center">
