@@ -31,7 +31,7 @@ export function Header() {
   const navLinks = [
     { href: '/', label: 'Нүүр' },
     { href: '/products', label: 'Бүтээгдэхүүн' },
-    { href: '/orders', label: 'Захиалга' },
+    { href: '/orders', label: 'Миний захиалсан бараа' },
   ];
 
   return (
@@ -139,7 +139,7 @@ export function Header() {
                           className="flex items-center space-x-3 px-4 py-3 text-coffee-600 hover:bg-coffee-50 transition-colors"
                         >
                           <Package className="w-5 h-5" />
-                          <span className="text-sm">Захиалгууд</span>
+                          <span className="text-sm">Миний захиалсан бараа</span>
                         </Link>
 
                         {isAdmin && (

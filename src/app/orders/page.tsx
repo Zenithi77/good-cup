@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Package, Clock, Check, Truck, X, Copy, CreditCard, RefreshCw, Loader2 } from 'lucide-react';
+import { Package, Clock, Check, Truck, X, Copy, CreditCard, RefreshCw, Loader2, Building2, Eye } from 'lucide-react';
 import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Order } from '@/types';
@@ -33,7 +33,8 @@ export default function OrdersPage() {
   const [dataLoaded, setDataLoaded] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [showOrderDetailModal, setShowOrderDetailModal] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
 
   // Compute loading state based on user and data status
   const isLoading = useMemo(() => {
@@ -75,16 +76,21 @@ export default function OrdersPage() {
     return () => unsubscribe();
   }, [user?.email]);
 
-  const copyToClipboard = (text: string) => {
+  const copyToClipboard = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
-    setCopied(true);
+    setCopied(field);
     toast.success('Хуулагдлаа');
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => setCopied(null), 2000);
   };
 
   const openPaymentModal = (order: Order) => {
     setSelectedOrder(order);
     setShowPaymentModal(true);
+  };
+
+  const openOrderDetailModal = (order: Order) => {
+    setSelectedOrder(order);
+    setShowOrderDetailModal(true);
   };
 
   if (!user) {
@@ -112,10 +118,10 @@ export default function OrdersPage() {
           className="mb-8"
         >
           <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
-            Миний захиалгууд
+            Миний захиалсан бараа
           </h1>
           <p className="text-coffee-200">
-            Бүх захиалгын түүх
+            Таны бүх захиалгын түүх болон төлөв
           </p>
         </motion.div>
 
@@ -210,29 +216,44 @@ export default function OrdersPage() {
                     </div>
 
                     {/* Actions */}
+                    <div className="flex flex-wrap gap-2 mt-4">
+                      {/* View Details Button - Always show */}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openOrderDetailModal(order)}
+                        className="border-coffee-600 text-coffee-200 hover:bg-coffee-800"
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        Дэлгэрэнгүй харах
+                      </Button>
+
+                      {/* Payment Button - Only for pending payments */}
+                      {order.paymentStatus === 'Pending' && (
+                        <Button
+                          size="sm"
+                          onClick={() => openPaymentModal(order)}
+                          className="bg-orange-500 hover:bg-orange-600"
+                        >
+                          <CreditCard className="w-4 h-4 mr-2" />
+                          Төлбөр төлөх
+                        </Button>
+                      )}
+                    </div>
+
                     {order.paymentStatus === 'Pending' && (
                       <div className="bg-gradient-to-r from-orange-500/10 to-yellow-500/10 border border-orange-500/30 rounded-xl p-4 mt-4">
-                        <div className="flex items-center justify-between flex-wrap gap-3">
-                          <div className="flex items-center text-orange-400">
-                            <motion.div
-                              animate={{ rotate: 360 }}
-                              transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-                            >
-                              <RefreshCw className="w-5 h-5 mr-2" />
-                            </motion.div>
-                            <div>
-                              <p className="font-medium">Төлбөр хүлээгдэж байна</p>
-                              <p className="text-xs text-orange-300/70">Автоматаар шалгаж байна...</p>
-                            </div>
-                          </div>
-                          <Button
-                            size="sm"
-                            onClick={() => openPaymentModal(order)}
-                            className="bg-orange-500 hover:bg-orange-600"
+                        <div className="flex items-center text-orange-400">
+                          <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
                           >
-                            <CreditCard className="w-4 h-4 mr-2" />
-                            Дансны мэдээлэл
-                          </Button>
+                            <RefreshCw className="w-5 h-5 mr-2" />
+                          </motion.div>
+                          <div>
+                            <p className="font-medium">Төлбөр хүлээгдэж байна</p>
+                            <p className="text-xs text-orange-300/70">Автоматаар шалгаж байна...</p>
+                          </div>
                         </div>
                       </div>
                     )}
@@ -266,51 +287,67 @@ export default function OrdersPage() {
       >
         {selectedOrder && (
           <div className="space-y-6">
-            {/* Bank Info */}
+            {/* Order Info */}
+            <div className="bg-coffee-800/50 rounded-xl p-4">
+              <div className="flex justify-between items-center">
+                <span className="text-coffee-400">Захиалгын дугаар</span>
+                <span className="text-coffee-100 font-medium">#{selectedOrder.paymentRef}</span>
+              </div>
+              <div className="flex justify-between items-center mt-2">
+                <span className="text-coffee-400">Төлөх дүн</span>
+                <span className="text-white font-bold text-xl">{formatPrice(selectedOrder.total)}</span>
+              </div>
+            </div>
+
+            {/* Bank Account Info */}
             <div className="bg-coffee-800 rounded-xl p-4">
-              <div className="flex items-center mb-3">
-                <CreditCard className="w-5 h-5 text-coffee-400 mr-2" />
-                <span className="text-coffee-200 font-medium">{BANK_ACCOUNTS.khan.bankName}</span>
+              <div className="flex items-center mb-4">
+                <Building2 className="w-5 h-5 text-coffee-400 mr-2" />
+                <span className="text-coffee-200 font-semibold">{BANK_ACCOUNTS.khan.bankName}</span>
               </div>
               
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-coffee-400">Дансны дугаар</span>
+              <div className="space-y-3">
+                {/* Account Number */}
+                <div className="flex justify-between items-center bg-coffee-900 rounded-lg p-3">
+                  <div>
+                    <span className="text-coffee-400 text-xs block">Дансны дугаар</span>
+                    <span className="text-coffee-100 font-mono text-lg">{BANK_ACCOUNTS.khan.accountNumber}</span>
+                  </div>
                   <button
-                    onClick={() => copyToClipboard(BANK_ACCOUNTS.khan.accountNumber)}
-                    className="flex items-center text-coffee-100 hover:text-coffee-300"
+                    onClick={() => copyToClipboard(BANK_ACCOUNTS.khan.accountNumber, 'account')}
+                    className="p-2 text-coffee-400 hover:text-coffee-100 hover:bg-coffee-800 rounded-lg transition-colors"
                   >
-                    {BANK_ACCOUNTS.khan.accountNumber}
-                    {copied ? <Check className="w-4 h-4 ml-2 text-green-400" /> : <Copy className="w-4 h-4 ml-2" />}
+                    {copied === 'account' ? <Check className="w-5 h-5 text-green-400" /> : <Copy className="w-5 h-5" />}
                   </button>
                 </div>
-                <div className="flex justify-between">
+
+                {/* Account Name */}
+                <div className="flex justify-between items-center">
                   <span className="text-coffee-400">Дансны нэр</span>
                   <span className="text-coffee-100">{BANK_ACCOUNTS.khan.accountName}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-coffee-400">Дүн</span>
-                  <span className="text-coffee-100 font-bold">{formatPrice(selectedOrder.total)}</span>
                 </div>
               </div>
             </div>
 
-            {/* Payment Reference */}
+            {/* Payment Reference - IMPORTANT */}
             <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-4">
-              <p className="text-orange-400 text-sm mb-2">
-                ⚠️ Гүйлгээний утга дээр дараах кодыг бичнэ үү:
+              <p className="text-orange-400 text-sm mb-3 font-medium">
+                ⚠️ Гүйлгээний утга дээр дараах кодыг заавал бичнэ үү:
               </p>
-              <div className="flex items-center justify-between bg-coffee-900 rounded-lg p-3">
-                <span className="text-2xl font-bold text-coffee-100 font-mono">
+              <div className="flex items-center justify-between bg-coffee-900 rounded-lg p-4">
+                <span className="text-3xl font-bold text-coffee-100 font-mono tracking-wider">
                   {selectedOrder.paymentRef}
                 </span>
                 <button
-                  onClick={() => copyToClipboard(selectedOrder.paymentRef || '')}
+                  onClick={() => copyToClipboard(selectedOrder.paymentRef || '', 'ref')}
                   className="p-2 text-coffee-400 hover:text-coffee-100 hover:bg-coffee-800 rounded-lg transition-colors"
                 >
-                  {copied ? <Check className="w-5 h-5 text-green-400" /> : <Copy className="w-5 h-5" />}
+                  {copied === 'ref' ? <Check className="w-5 h-5 text-green-400" /> : <Copy className="w-5 h-5" />}
                 </button>
               </div>
+              <p className="text-orange-300/70 text-xs mt-2">
+                Энэ код байхгүй бол төлбөр автоматаар баталгаажихгүй
+              </p>
             </div>
 
             {/* Status */}
@@ -323,6 +360,105 @@ export default function OrdersPage() {
                 Төлбөр төлсний дараа автоматаар баталгаажна
               </p>
             </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Order Detail Modal */}
+      <Modal
+        isOpen={showOrderDetailModal}
+        onClose={() => setShowOrderDetailModal(false)}
+        title="Захиалгын дэлгэрэнгүй"
+        size="lg"
+      >
+        {selectedOrder && (
+          <div className="space-y-6">
+            {/* Order Status */}
+            <div className="flex flex-wrap gap-2">
+              <Badge variant={statusConfig[selectedOrder.status as keyof typeof statusConfig]?.color as 'success' | 'warning' | 'error' | 'info'}>
+                {statusConfig[selectedOrder.status as keyof typeof statusConfig]?.label}
+              </Badge>
+              <Badge variant={paymentStatusConfig[selectedOrder.paymentStatus as keyof typeof paymentStatusConfig]?.color as 'success' | 'warning' | 'error' | 'info'}>
+                {paymentStatusConfig[selectedOrder.paymentStatus as keyof typeof paymentStatusConfig]?.label}
+              </Badge>
+            </div>
+
+            {/* Order Info */}
+            <div className="bg-coffee-800/50 rounded-xl p-4 space-y-2">
+              <div className="flex justify-between">
+                <span className="text-coffee-400">Захиалгын дугаар</span>
+                <span className="text-coffee-100 font-mono">#{selectedOrder.paymentRef || selectedOrder.id.slice(-6).toUpperCase()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-coffee-400">Огноо</span>
+                <span className="text-coffee-100">
+                  {selectedOrder.createdAt?.toLocaleDateString('mn-MN', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-coffee-400">Нийт дүн</span>
+                <span className="text-white font-bold">{formatPrice(selectedOrder.total)}</span>
+              </div>
+            </div>
+
+            {/* Order Items */}
+            <div>
+              <h3 className="text-coffee-200 font-semibold mb-3">Захиалсан бүтээгдэхүүнүүд</h3>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {selectedOrder.items.map((item, i) => (
+                  <div key={i} className="bg-coffee-800 rounded-lg p-3 flex justify-between items-center">
+                    <div>
+                      <p className="text-coffee-100">{item.productName}</p>
+                      <p className="text-coffee-400 text-sm">{item.size} × {item.quantity}</p>
+                    </div>
+                    <span className="text-coffee-200">{formatPrice(item.price * item.quantity)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Payment Info Button - Only for pending payments */}
+            {selectedOrder.paymentStatus === 'Pending' && (
+              <Button
+                className="w-full bg-orange-500 hover:bg-orange-600"
+                onClick={() => {
+                  setShowOrderDetailModal(false);
+                  setTimeout(() => openPaymentModal(selectedOrder), 200);
+                }}
+              >
+                <CreditCard className="w-5 h-5 mr-2" />
+                Гүйлгээний утга болон дансны мэдээлэл харах
+              </Button>
+            )}
+
+            {/* Paid Info */}
+            {selectedOrder.paymentStatus === 'Paid' && (
+              <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4">
+                <div className="flex items-center text-green-400">
+                  <Check className="w-5 h-5 mr-2" />
+                  <div>
+                    <p className="font-medium">Төлбөр баталгаажсан</p>
+                    {selectedOrder.paidAt && (
+                      <p className="text-xs text-green-300/70">
+                        {selectedOrder.paidAt.toLocaleDateString('mn-MN', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </Modal>

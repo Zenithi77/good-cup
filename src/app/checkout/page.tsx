@@ -4,13 +4,13 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { ArrowLeft, MapPin, User, CreditCard, Loader2, AlertTriangle, Truck, Package } from 'lucide-react';
+import { ArrowLeft, MapPin, User, CreditCard, Loader2, AlertTriangle, Truck, Package, Copy, Check, Building2 } from 'lucide-react';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useCartStore } from '@/store/cartStore';
 import { useAuthStore } from '@/store/authStore';
 import { formatPrice, getDeliveryMessage } from '@/lib/utils';
-import { UB_DISTRICTS, MINIMUM_ORDER_AMOUNT } from '@/lib/constants';
+import { UB_DISTRICTS, MINIMUM_ORDER_AMOUNT, BANK_ACCOUNTS } from '@/lib/constants';
 import { Button, Input, Select, Modal } from '@/components/ui';
 import toast from 'react-hot-toast';
 
@@ -30,11 +30,21 @@ export default function CheckoutPage() {
   
   const [loading, setLoading] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [pendingSubmit, setPendingSubmit] = useState(false);
+  const [createdOrderRef, setCreatedOrderRef] = useState<string | null>(null);
+  const [copied, setCopied] = useState<string | null>(null);
   
   const total = getTotal();
   const deliveryInfo = getDeliveryMessage();
+
+  const copyToClipboard = (text: string, field: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(field);
+    toast.success('Хуулагдлаа');
+    setTimeout(() => setCopied(null), 2000);
+  };
 
   useEffect(() => {
     if (user) {
@@ -118,10 +128,15 @@ export default function CheckoutPage() {
 
       await addDoc(collection(db, 'orders'), orderData);
       
-      // Clear cart and redirect to orders page
+      // Save the payment reference for the modal
+      setCreatedOrderRef(ref);
+      
+      // Clear cart
       clearCart();
+      
+      // Show payment modal with bank details
+      setShowPaymentModal(true);
       toast.success('Захиалга амжилттай үүслээ!');
-      router.push('/orders');
       
     } catch (error) {
       console.error('Error creating order:', error);
@@ -130,6 +145,11 @@ export default function CheckoutPage() {
       setLoading(false);
       setPendingSubmit(false);
     }
+  };
+
+  const handleGoToOrders = () => {
+    setShowPaymentModal(false);
+    router.push('/orders');
   };
 
   if (items.length === 0) {
@@ -404,6 +424,100 @@ export default function CheckoutPage() {
               Зөвшөөрч үргэлжлүүлэх
             </Button>
           </div>
+        </div>
+      </Modal>
+
+      {/* Payment Info Modal - Shows after order is created */}
+      <Modal
+        isOpen={showPaymentModal}
+        onClose={handleGoToOrders}
+        title="Төлбөр төлөх"
+        size="md"
+      >
+        <div className="space-y-6">
+          {/* Success Message */}
+          <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4">
+            <div className="flex items-center text-green-400">
+              <Check className="w-5 h-5 mr-2" />
+              <span className="font-semibold">Захиалга амжилттай үүслээ!</span>
+            </div>
+            <p className="text-green-300/70 text-sm mt-1 ml-7">
+              Дараах данс руу төлбөрөө шилжүүлнэ үү
+            </p>
+          </div>
+
+          {/* Bank Account Info */}
+          <div className="bg-coffee-800 rounded-xl p-4">
+            <div className="flex items-center mb-4">
+              <Building2 className="w-5 h-5 text-coffee-400 mr-2" />
+              <span className="text-coffee-200 font-semibold">{BANK_ACCOUNTS.khan.bankName}</span>
+            </div>
+            
+            <div className="space-y-3">
+              {/* Account Number */}
+              <div className="flex justify-between items-center bg-coffee-900 rounded-lg p-3">
+                <div>
+                  <span className="text-coffee-400 text-xs block">Дансны дугаар</span>
+                  <span className="text-coffee-100 font-mono text-lg">{BANK_ACCOUNTS.khan.accountNumber}</span>
+                </div>
+                <button
+                  onClick={() => copyToClipboard(BANK_ACCOUNTS.khan.accountNumber, 'account')}
+                  className="p-2 text-coffee-400 hover:text-coffee-100 hover:bg-coffee-800 rounded-lg transition-colors"
+                >
+                  {copied === 'account' ? <Check className="w-5 h-5 text-green-400" /> : <Copy className="w-5 h-5" />}
+                </button>
+              </div>
+
+              {/* Account Name */}
+              <div className="flex justify-between items-center">
+                <span className="text-coffee-400">Дансны нэр</span>
+                <span className="text-coffee-100">{BANK_ACCOUNTS.khan.accountName}</span>
+              </div>
+
+              {/* Amount */}
+              <div className="flex justify-between items-center">
+                <span className="text-coffee-400">Төлөх дүн</span>
+                <span className="text-white font-bold text-xl">{formatPrice(total)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Payment Reference - IMPORTANT */}
+          <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-4">
+            <p className="text-orange-400 text-sm mb-3 font-medium">
+              ⚠️ Гүйлгээний утга дээр дараах кодыг заавал бичнэ үү:
+            </p>
+            <div className="flex items-center justify-between bg-coffee-900 rounded-lg p-4">
+              <span className="text-3xl font-bold text-coffee-100 font-mono tracking-wider">
+                {createdOrderRef}
+              </span>
+              <button
+                onClick={() => copyToClipboard(createdOrderRef || '', 'ref')}
+                className="p-2 text-coffee-400 hover:text-coffee-100 hover:bg-coffee-800 rounded-lg transition-colors"
+              >
+                {copied === 'ref' ? <Check className="w-5 h-5 text-green-400" /> : <Copy className="w-5 h-5" />}
+              </button>
+            </div>
+            <p className="text-orange-300/70 text-xs mt-2">
+              Энэ код байхгүй бол төлбөр автоматаар баталгаажихгүй
+            </p>
+          </div>
+
+          {/* Info */}
+          <div className="text-center text-coffee-400 text-sm">
+            <p>Төлбөр төлсний дараа автоматаар баталгаажна</p>
+            <p className="text-coffee-500 mt-1">Захиалгын хуудаснаас статусаа шалгах боломжтой</p>
+          </div>
+
+          {/* Go to Orders Button */}
+          <Button
+            className="w-full"
+            size="lg"
+            onClick={handleGoToOrders}
+          >
+            <Package className="w-5 h-5 mr-2" />
+            Миний захиалсан бараа руу очих
+          </Button>
         </div>
       </Modal>
     </div>
