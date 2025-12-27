@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { motion } from 'framer-motion';
-import { ShoppingCart, Minus, Plus, ArrowLeft, Package, Check } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ShoppingCart, Minus, Plus, ArrowLeft, Package, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Product } from '@/types';
@@ -23,8 +23,28 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [quantity, setQuantity] = useState(1);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
   const { addItem, openCart } = useCartStore();
+
+  // Бүх зургуудыг авах (imageUrls эсвэл imageUrl)
+  const getProductImages = () => {
+    if (!product) return [];
+    if (product.imageUrls && product.imageUrls.length > 0) {
+      return product.imageUrls;
+    }
+    return product.imageUrl ? [product.imageUrl] : [];
+  };
+
+  const images = getProductImages();
+
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % images.length);
+  };
+
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
+  };
 
   const fetchProduct = async () => {
     try {
@@ -59,13 +79,17 @@ export default function ProductDetailPage() {
   const handleAddToCart = () => {
     if (!product || !selectedSize) return;
     
+    const mainImage = product.imageUrls && product.imageUrls.length > 0 
+      ? product.imageUrls[0] 
+      : product.imageUrl;
+    
     addItem({
       productId: product.id,
       name: product.name,
       size: selectedSize,
       price: getSelectedPrice(),
       quantity,
-      imageUrl: product.imageUrl,
+      imageUrl: mainImage,
       packageQty: product.packageQty,
     });
     
@@ -124,22 +148,93 @@ export default function ProductDetailPage() {
         </motion.button>
 
         <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
-          {/* Image */}
+          {/* Image Slider */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
             className="relative"
           >
+            {/* Main Image */}
             <div className="relative aspect-square rounded-2xl overflow-hidden bg-white border border-coffee-200 shadow-sm">
-              <Image
-                src={product.imageUrl || '/placeholder.png'}
-                alt={product.name}
-                fill
-                className="object-cover"
-                priority
-              />
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentImageIndex}
+                  initial={{ opacity: 0, x: 50 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -50 }}
+                  transition={{ duration: 0.3 }}
+                  className="absolute inset-0"
+                >
+                  <Image
+                    src={images[currentImageIndex] || '/placeholder.png'}
+                    alt={product.name}
+                    fill
+                    className="object-cover"
+                    priority
+                  />
+                </motion.div>
+              </AnimatePresence>
               <ProductBadge badge={product.badge || ''} />
+              
+              {/* Navigation Arrows - зөвхөн олон зурагтай үед */}
+              {images.length > 1 && (
+                <>
+                  <button
+                    onClick={prevImage}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 p-2 bg-white/80 hover:bg-white rounded-full shadow-lg transition-all"
+                  >
+                    <ChevronLeft className="w-5 h-5 text-coffee-700" />
+                  </button>
+                  <button
+                    onClick={nextImage}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-white/80 hover:bg-white rounded-full shadow-lg transition-all"
+                  >
+                    <ChevronRight className="w-5 h-5 text-coffee-700" />
+                  </button>
+                </>
+              )}
             </div>
+
+            {/* Thumbnail Images */}
+            {images.length > 1 && (
+              <div className="flex gap-2 mt-4 overflow-x-auto pb-2">
+                {images.map((img, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentImageIndex(index)}
+                    className={`relative w-16 h-16 md:w-20 md:h-20 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-all ${
+                      currentImageIndex === index
+                        ? 'border-coffee-500 ring-2 ring-coffee-500/30'
+                        : 'border-coffee-200 hover:border-coffee-400'
+                    }`}
+                  >
+                    <Image
+                      src={img}
+                      alt={`${product.name} ${index + 1}`}
+                      fill
+                      className="object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Dots indicator - mobile */}
+            {images.length > 1 && (
+              <div className="flex justify-center gap-2 mt-3 md:hidden">
+                {images.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentImageIndex(index)}
+                    className={`w-2 h-2 rounded-full transition-all ${
+                      currentImageIndex === index
+                        ? 'bg-coffee-500 w-4'
+                        : 'bg-coffee-300'
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
           </motion.div>
 
           {/* Details */}

@@ -10,7 +10,7 @@ import { db } from '@/lib/firebase';
 import { Product } from '@/types';
 import { useAuthStore } from '@/store/authStore';
 import { formatPrice } from '@/lib/utils';
-import { CATEGORIES, SIZES } from '@/lib/constants';
+import { CATEGORIES } from '@/lib/constants';
 import { Button, Input, Select, Modal } from '@/components/ui';
 import toast from 'react-hot-toast';
 
@@ -22,6 +22,7 @@ interface FormProduct {
   packageQty: string;
   description: string;
   imageUrl: string;
+  imageUrls: string[];
   badge: string;
   featured: boolean;
 }
@@ -29,11 +30,12 @@ interface FormProduct {
 const emptyProduct: FormProduct = {
   name: '',
   category: 'double-wall-cup',
-  sizes: [{ size: '8oz', price: '' }],
+  sizes: [{ size: '', price: '' }],
   stock: '100',
   packageQty: '50',
   description: '',
   imageUrl: '',
+  imageUrls: [],
   badge: '',
   featured: false,
 };
@@ -97,7 +99,12 @@ export default function AdminProductsPage() {
 
       const data = await response.json();
       if (data.success) {
-        setFormData(prev => ({ ...prev, imageUrl: data.url }));
+        // Олон зураг нэмэх
+        setFormData(prev => ({
+          ...prev,
+          imageUrls: [...prev.imageUrls, data.url],
+          imageUrl: prev.imageUrls.length === 0 ? data.url : prev.imageUrl, // Эхний зургийг үндсэн зураг болгох
+        }));
         toast.success('Зураг амжилттай хуулагдлаа');
       } else {
         toast.error('Зураг хуулахад алдаа гарлаа');
@@ -109,10 +116,21 @@ export default function AdminProductsPage() {
     }
   };
 
+  const handleRemoveImage = (index: number) => {
+    setFormData(prev => {
+      const newImageUrls = prev.imageUrls.filter((_, i) => i !== index);
+      return {
+        ...prev,
+        imageUrls: newImageUrls,
+        imageUrl: newImageUrls.length > 0 ? newImageUrls[0] : '', // Эхний зургийг үндсэн болгох
+      };
+    });
+  };
+
   const handleAddSize = () => {
     setFormData(prev => ({
       ...prev,
-      sizes: [...prev.sizes, { size: '8oz', price: '' }]
+      sizes: [...prev.sizes, { size: '', price: '' }]
     }));
   };
 
@@ -150,6 +168,7 @@ export default function AdminProductsPage() {
         packageQty: Number(formData.packageQty) || 0,
         description: formData.description,
         imageUrl: formData.imageUrl,
+        imageUrls: formData.imageUrls,
         badge: formData.badge,
         featured: formData.featured,
         updatedAt: new Date(),
@@ -187,6 +206,7 @@ export default function AdminProductsPage() {
       packageQty: String(product.packageQty),
       description: product.description,
       imageUrl: product.imageUrl,
+      imageUrls: product.imageUrls || (product.imageUrl ? [product.imageUrl] : []),
       badge: product.badge || '',
       featured: product.featured,
     });
@@ -341,45 +361,50 @@ export default function AdminProductsPage() {
         size="lg"
       >
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Image */}
+          {/* Images - Multiple */}
           <div>
-            <label className="block text-sm font-medium text-coffee-200 mb-2">Зураг</label>
-            <div className="flex items-start space-x-4">
-              {formData.imageUrl ? (
-                <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-coffee-800">
+            <label className="block text-sm font-medium text-coffee-200 mb-2">Зурагнууд</label>
+            <div className="flex flex-wrap items-start gap-3">
+              {formData.imageUrls.map((url, index) => (
+                <div key={index} className="relative w-20 h-20 rounded-lg overflow-hidden bg-coffee-800 group">
                   <Image
-                    src={formData.imageUrl}
-                    alt="Preview"
+                    src={url}
+                    alt={`Preview ${index + 1}`}
                     fill
                     className="object-cover"
                   />
+                  {index === 0 && (
+                    <span className="absolute bottom-0 left-0 right-0 bg-coffee-500 text-white text-[10px] text-center py-0.5">
+                      Үндсэн
+                    </span>
+                  )}
                   <button
                     type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, imageUrl: '' }))}
-                    className="absolute top-1 right-1 p-1 bg-red-500 rounded-full text-white"
+                    onClick={() => handleRemoveImage(index)}
+                    className="absolute top-1 right-1 p-1 bg-red-500 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     <X className="w-3 h-3" />
                   </button>
                 </div>
-              ) : (
-                <label className="w-24 h-24 rounded-lg border-2 border-dashed border-coffee-700 flex flex-col items-center justify-center cursor-pointer hover:border-coffee-500 transition-colors">
-                  {uploading ? (
-                    <Loader2 className="w-6 h-6 text-coffee-400 animate-spin" />
-                  ) : (
-                    <>
-                      <Upload className="w-6 h-6 text-coffee-400" />
-                      <span className="text-xs text-coffee-500 mt-1">Хуулах</span>
-                    </>
-                  )}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
-                </label>
-              )}
+              ))}
+              <label className="w-20 h-20 rounded-lg border-2 border-dashed border-coffee-700 flex flex-col items-center justify-center cursor-pointer hover:border-coffee-500 transition-colors">
+                {uploading ? (
+                  <Loader2 className="w-5 h-5 text-coffee-400 animate-spin" />
+                ) : (
+                  <>
+                    <Upload className="w-5 h-5 text-coffee-400" />
+                    <span className="text-[10px] text-coffee-500 mt-1">Нэмэх</span>
+                  </>
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+              </label>
             </div>
+            <p className="text-xs text-coffee-500 mt-2">Эхний зураг нь бүтээгдэхүүний үндсэн зураг болно</p>
           </div>
 
           {/* Name */}
@@ -404,11 +429,11 @@ export default function AdminProductsPage() {
             <div className="space-y-2">
               {formData.sizes.map((size, index) => (
                 <div key={index} className="flex items-center space-x-2">
-                  <Select
+                  <Input
                     value={size.size}
                     onChange={(e) => handleSizeChange(index, 'size', e.target.value)}
-                    options={SIZES.map(s => ({ value: s, label: s }))}
-                    className="w-24"
+                    placeholder="8oz, 12oz гэх мэт"
+                    className="w-32"
                   />
                   <Input
                     type="text"

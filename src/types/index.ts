@@ -1,8 +1,8 @@
-import { CategoryId, Size, OrderStatus, PaymentStatus } from '@/lib/constants';
+import { CategoryId, OrderStatus, PaymentStatus } from '@/lib/constants';
 
 // Product types
 export interface ProductSize {
-  size: Size;
+  size: string;
   price: number;
 }
 
@@ -15,6 +15,7 @@ export interface Product {
   packageQty: number;
   description: string;
   imageUrl: string;
+  imageUrls?: string[]; // Олон зураг
   badge?: 'bestseller' | 'new' | 'sale' | '';
   featured: boolean;
   createdAt: Date;

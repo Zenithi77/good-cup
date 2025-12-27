@@ -18,6 +18,11 @@ interface ProductCardProps {
 export function ProductCard({ product, variant = 'default' }: ProductCardProps) {
   const { addItem, openCart } = useCartStore();
 
+  // Эхний зураг авах (imageUrls эсвэл imageUrl)
+  const mainImage = product.imageUrls && product.imageUrls.length > 0 
+    ? product.imageUrls[0] 
+    : product.imageUrl;
+
   // Get lowest price from sizes
   const lowestPrice = product.sizes.length > 0
     ? Math.min(...product.sizes.map(s => s.price))
@@ -35,7 +40,7 @@ export function ProductCard({ product, variant = 'default' }: ProductCardProps) 
         size: defaultSize.size,
         price: defaultSize.price,
         quantity: 1,
-        imageUrl: product.imageUrl,
+        imageUrl: mainImage,
         packageQty: product.packageQty,
       });
       toast.success(`${product.name} сагсанд нэмэгдлээ`);
@@ -56,7 +61,7 @@ export function ProductCard({ product, variant = 'default' }: ProductCardProps) 
             {/* Image - Full Width, Top */}
             <div className="relative aspect-square overflow-hidden bg-coffee-100">
               <Image
-                src={product.imageUrl || '/placeholder.png'}
+                src={mainImage || '/placeholder.png'}
                 alt={product.name}
                 fill
                 className="object-cover"
@@ -120,7 +125,7 @@ export function ProductCard({ product, variant = 'default' }: ProductCardProps) 
           {/* Image */}
           <div className="relative aspect-square overflow-hidden bg-coffee-100">
             <Image
-              src={product.imageUrl || '/placeholder.png'}
+              src={mainImage || '/placeholder.png'}
               alt={product.name}
               fill
               className="object-cover group-hover:scale-110 transition-transform duration-500"

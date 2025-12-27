@@ -34,6 +34,7 @@ export default function CheckoutPage() {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [pendingSubmit, setPendingSubmit] = useState(false);
   const [createdOrderRef, setCreatedOrderRef] = useState<string | null>(null);
+  const [createdOrderTotal, setCreatedOrderTotal] = useState<number>(0);
   const [copied, setCopied] = useState<string | null>(null);
   
   const total = getTotal();
@@ -128,8 +129,9 @@ export default function CheckoutPage() {
 
       await addDoc(collection(db, 'orders'), orderData);
       
-      // Save the payment reference for the modal
+      // Save the payment reference and total for the modal
       setCreatedOrderRef(ref);
+      setCreatedOrderTotal(total);
       
       // Clear cart
       clearCart();
