@@ -480,7 +480,7 @@ export default function CheckoutPage() {
               {/* Amount */}
               <div className="flex justify-between items-center">
                 <span className="text-coffee-400">Төлөх дүн</span>
-                <span className="text-white font-bold text-xl">{formatPrice(total)}</span>
+                <span className="text-white font-bold text-xl">{formatPrice(createdOrderTotal)}</span>
               </div>
             </div>
           </div>
