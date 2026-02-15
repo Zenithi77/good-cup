@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { adminDb } from '@/lib/firebase-admin';
 import { sendOrderSuccessEmail } from '@/lib/email';
 import { Order } from '@/types';
 
@@ -62,12 +61,11 @@ export async function POST(request: NextRequest) {
     
     console.log('💰 Transaction text:', transactionText);
     
-    // Find pending orders
-    const ordersRef = collection(db, 'orders');
-    const q = query(ordersRef, where('paymentStatus', 'in', ['pending', 'Pending']));
-    const snapshot = await getDocs(q);
+    // Find pending orders using Admin SDK
+    const ordersRef = adminDb.collection('orders');
+    const snapshot = await ordersRef.where('paymentStatus', 'in', ['pending', 'Pending']).get();
     
-    let matchedOrder = null;
+    let matchedOrder: FirebaseFirestore.DocumentData | null = null;
     let matchedOrderId = '';
     
     for (const orderDoc of snapshot.docs) {
@@ -112,8 +110,8 @@ export async function POST(request: NextRequest) {
     
     console.log('✅ Amount verified:', amount);
     
-    // Update order payment status
-    await updateDoc(doc(db, 'orders', matchedOrderId), {
+    // Update order payment status using Admin SDK
+    await adminDb.collection('orders').doc(matchedOrderId).update({
       paymentStatus: 'Paid',
       paidAt: new Date(),
       status: 'Processing',

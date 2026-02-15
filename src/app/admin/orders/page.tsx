@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-
+import Image from 'next/image';
 import { Search, Eye, Check, Truck, X, Clock, Loader2 } from 'lucide-react';
 import { collection, getDocs, updateDoc, doc, orderBy, query } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -343,12 +343,30 @@ export default function AdminOrdersPage() {
               <h3 className="text-coffee-200 font-medium mb-3">Бүтээгдэхүүн</h3>
               <div className="space-y-2">
                 {selectedOrder.items.map((item, index) => (
-                  <div key={index} className="flex justify-between items-center bg-coffee-800 rounded-lg p-3">
-                    <div>
-                      <p className="text-coffee-100">{item.productName}</p>
+                  <div key={index} className="flex items-center gap-4 bg-coffee-800 rounded-lg p-3">
+                    {/* Product Image */}
+                    <div className="w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-coffee-700 relative">
+                      {item.imageUrl ? (
+                        <Image
+                          src={item.imageUrl}
+                          alt={item.productName}
+                          fill
+                          sizes="64px"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-coffee-500">
+                          <span className="text-xs">Зураггүй</span>
+                        </div>
+                      )}
+                    </div>
+                    {/* Product Info */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-coffee-100 font-medium truncate">{item.productName}</p>
                       <p className="text-coffee-400 text-sm">{item.size} × {item.quantity}</p>
                     </div>
-                    <p className="text-coffee-100 font-medium">
+                    {/* Price */}
+                    <p className="text-coffee-100 font-medium flex-shrink-0">
                       {formatPrice(item.price * item.quantity)}
                     </p>
                   </div>

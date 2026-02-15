@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Package, Clock, Check, Truck, X, Copy, CreditCard, RefreshCw, Loader2, Building2, Eye } from 'lucide-react';
 import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
@@ -410,14 +411,32 @@ export default function OrdersPage() {
             {/* Order Items */}
             <div>
               <h3 className="text-coffee-200 font-semibold mb-3">Захиалсан бүтээгдэхүүнүүд</h3>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
+              <div className="space-y-2 max-h-64 overflow-y-auto">
                 {selectedOrder.items.map((item, i) => (
-                  <div key={i} className="bg-coffee-800 rounded-lg p-3 flex justify-between items-center">
-                    <div>
-                      <p className="text-coffee-100">{item.productName}</p>
+                  <div key={i} className="bg-coffee-800 rounded-lg p-3 flex items-center gap-4">
+                    {/* Product Image */}
+                    <div className="w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-coffee-700 relative">
+                      {item.imageUrl ? (
+                        <Image
+                          src={item.imageUrl}
+                          alt={item.productName}
+                          fill
+                          sizes="64px"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-coffee-500">
+                          <Package className="w-6 h-6" />
+                        </div>
+                      )}
+                    </div>
+                    {/* Product Info */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-coffee-100 font-medium truncate">{item.productName}</p>
                       <p className="text-coffee-400 text-sm">{item.size} × {item.quantity}</p>
                     </div>
-                    <span className="text-coffee-200">{formatPrice(item.price * item.quantity)}</span>
+                    {/* Price */}
+                    <span className="text-coffee-200 flex-shrink-0">{formatPrice(item.price * item.quantity)}</span>
                   </div>
                 ))}
               </div>

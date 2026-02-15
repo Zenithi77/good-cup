@@ -1,6 +1,6 @@
-import { initializeApp, getApps } from 'firebase/app';
+import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, initializeFirestore, Firestore } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY?.trim(),
@@ -12,8 +12,20 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+let app: FirebaseApp;
+let db: Firestore;
+
+if (getApps().length === 0) {
+  app = initializeApp(firebaseConfig);
+  // Initialize Firestore with long polling to avoid QUIC protocol errors
+  db = initializeFirestore(app, {
+    experimentalForceLongPolling: true,
+  });
+} else {
+  app = getApps()[0];
+  db = getFirestore(app);
+}
+
 const auth = getAuth(app);
-const db = getFirestore(app);
 
 export { app, auth, db };
