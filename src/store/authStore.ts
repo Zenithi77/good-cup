@@ -7,6 +7,8 @@ import {
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
   onAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithPopup,
   User as FirebaseUser
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
@@ -20,6 +22,7 @@ interface AuthState {
   error: string | null;
   isAdmin: boolean;
   signIn: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signUp: (name: string, email: string, phone: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   setUser: (user: User | null) => void;
@@ -57,6 +60,56 @@ export const useAuthStore = create<AuthState>()(
           }
         } catch (error: unknown) {
           const errorMessage = error instanceof Error ? error.message : 'Нэвтрэхэд алдаа гарлаа';
+          set({ error: errorMessage, loading: false });
+          throw error;
+        }
+      },
+
+      signInWithGoogle: async () => {
+        try {
+          set({ loading: true, error: null });
+          const provider = new GoogleAuthProvider();
+          const result = await signInWithPopup(auth, provider);
+          const firebaseUser = result.user;
+          
+          // Check if user already exists in Firestore
+          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+          
+          if (userDoc.exists()) {
+            // Existing user - get their data
+            const userData = userDoc.data() as User;
+            const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+            const isAdminUser = firebaseUser.email === adminEmail || userData.role === 'admin';
+            set({ 
+              user: userData, 
+              firebaseUser: firebaseUser,
+              isAdmin: isAdminUser,
+              loading: false 
+            });
+          } else {
+            // New user - create their profile
+            const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+            const userData: User = {
+              id: firebaseUser.uid,
+              name: firebaseUser.displayName || '',
+              email: firebaseUser.email || '',
+              phone: '',
+              role: firebaseUser.email === adminEmail ? 'admin' : 'user',
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            };
+
+            await setDoc(doc(db, 'users', firebaseUser.uid), userData);
+            
+            set({ 
+              user: userData, 
+              firebaseUser: firebaseUser,
+              isAdmin: firebaseUser.email === adminEmail,
+              loading: false 
+            });
+          }
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error ? error.message : 'Google-ээр нэвтрэхэд алдаа гарлаа';
           set({ error: errorMessage, loading: false });
           throw error;
         }

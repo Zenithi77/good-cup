@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { ArrowLeft, MapPin, User, CreditCard, Loader2, AlertTriangle, Truck, Package, Copy, Check, Building2 } from 'lucide-react';
+import { ArrowLeft, MapPin, User, CreditCard, Loader2, AlertTriangle, Truck, Package, Copy, Check, Building2, UserPlus, LogIn, UserX } from 'lucide-react';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useCartStore } from '@/store/cartStore';
@@ -29,6 +29,7 @@ export default function CheckoutPage() {
   });
   
   const [loading, setLoading] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -63,7 +64,7 @@ export default function CheckoutPage() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // Show terms modal first
+  // Show terms modal first (or auth modal if not logged in)
   const handlePaymentClick = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -77,7 +78,20 @@ export default function CheckoutPage() {
       return;
     }
 
+    // If user is not logged in, show auth modal first
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+
     // Show terms modal
+    setShowTermsModal(true);
+    setTermsAccepted(false);
+  };
+
+  // Continue as guest - close auth modal and proceed to terms
+  const handleContinueAsGuest = () => {
+    setShowAuthModal(false);
     setShowTermsModal(true);
     setTermsAccepted(false);
   };
@@ -354,6 +368,80 @@ export default function CheckoutPage() {
           </motion.div>
         </div>
       </div>
+
+      {/* Auth Required Modal - For non-logged in users */}
+      <Modal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        title="Бүртгүүлэх эсвэл нэвтрэх"
+        size="md"
+      >
+        <div className="space-y-6">
+          {/* Info Message */}
+          <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
+            <div className="flex items-start">
+              <User className="w-5 h-5 text-blue-400 mr-3 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-blue-300 font-medium">Бүртгэлтэй хэрэглэгчийн давуу тал</p>
+                <ul className="text-blue-300/70 text-sm mt-2 space-y-1">
+                  <li>• Захиалгын түүхээ хянах боломжтой</li>
+                  <li>• Мэдээлэл автоматаар бөглөгдөнө</li>
+                  <li>• Онцгой урамшуулал, хямдрал авах боломжтой</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="space-y-3">
+            {/* Login Button */}
+            <Button
+              className="w-full"
+              size="lg"
+              onClick={() => router.push('/login?redirect=/checkout')}
+            >
+              <LogIn className="w-5 h-5 mr-2" />
+              Нэвтрэх
+            </Button>
+
+            {/* Register Button */}
+            <Button
+              variant="outline"
+              className="w-full"
+              size="lg"
+              onClick={() => router.push('/register?redirect=/checkout')}
+            >
+              <UserPlus className="w-5 h-5 mr-2" />
+              Бүртгүүлэх
+            </Button>
+
+            {/* Divider */}
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-coffee-700"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-3 bg-coffee-850 text-coffee-400">эсвэл</span>
+              </div>
+            </div>
+
+            {/* Guest Checkout Button */}
+            <Button
+              variant="ghost"
+              className="w-full text-coffee-300 hover:text-coffee-100"
+              size="lg"
+              onClick={handleContinueAsGuest}
+            >
+              <UserX className="w-5 h-5 mr-2" />
+              Зочноор үргэлжлүүлэх
+            </Button>
+          </div>
+
+          <p className="text-center text-coffee-500 text-xs">
+            Зочноор захиалга өгсөн тохиолдолд захиалгын түүх хадгалагдахгүй
+          </p>
+        </div>
+      </Modal>
 
       {/* Terms & Conditions Modal */}
       <Modal
