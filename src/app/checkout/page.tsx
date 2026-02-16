@@ -428,7 +428,7 @@ export default function CheckoutPage() {
             {/* Guest Checkout Button */}
             <Button
               variant="ghost"
-              className="w-full text-coffee-300 hover:text-coffee-100"
+              className="w-full text-coffee-300 hover:text-coffee-100 hover:bg-coffee-800/50 cursor-pointer"
               size="lg"
               onClick={handleContinueAsGuest}
             >
