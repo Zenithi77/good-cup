@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -10,7 +10,7 @@ import { Button } from '@/components/ui';
 import { isValidEmail, isValidPhone } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
-export default function RegisterPage() {
+function RegisterPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/';
@@ -326,5 +326,21 @@ export default function RegisterPage() {
         </motion.div>
       </div>
     </div>
+  );
+}
+
+function RegisterFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-coffee-500"></div>
+    </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<RegisterFallback />}>
+      <RegisterPageContent />
+    </Suspense>
   );
 }
