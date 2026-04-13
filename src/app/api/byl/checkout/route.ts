@@ -25,13 +25,12 @@ export async function POST(request: NextRequest) {
     // Map cart items to Byl checkout format
     const bylItems = items.map((item: { name: string; price: number; quantity: number; size: string; productId: string }) => ({
       price_data: {
-        unit_amount: item.price * item.quantity,
+        unit_amount: item.price,
         product_data: {
           name: `${item.name} (${item.size})`,
-          client_reference_id: item.productId,
         },
       },
-      quantity: 1,
+      quantity: item.quantity,
     }));
 
     const result = await createBylCheckout({
