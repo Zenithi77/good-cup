@@ -153,7 +153,7 @@ export default function CheckoutPage() {
         notes: formData.notes,
         status: 'Pending',
         paymentStatus: 'Pending',
-        paymentRef: paymentMethod === 'bank_transfer' ? ref : undefined,
+        ...(paymentMethod === 'bank_transfer' ? { paymentRef: ref } : {}),
         paymentMethod,
         userId: user?.id || null,
         createdAt: new Date(),
