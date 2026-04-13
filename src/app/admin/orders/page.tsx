@@ -326,7 +326,10 @@ export default function AdminOrdersPage() {
                 <div className="col-span-2">
                   <span className="text-coffee-400">Хаяг:</span>
                   <span className="text-coffee-100 ml-2">
-                    {selectedOrder.deliveryDistrict}, {selectedOrder.deliveryAddress}
+                    {selectedOrder.deliveryType === 'rural' 
+                      ? `${selectedOrder.deliveryAimag} аймаг, ${selectedOrder.deliverySum}, ${selectedOrder.deliveryAddress}`
+                      : `${selectedOrder.deliveryDistrict}, ${selectedOrder.deliveryAddress}`
+                    }
                   </span>
                 </div>
                 {selectedOrder.notes && (

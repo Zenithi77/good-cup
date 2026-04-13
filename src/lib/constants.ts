@@ -65,6 +65,10 @@ export const UB_DISTRICTS = [
   'Багахангай дүүрэг'
 ] as const;
 
+// Delivery types
+export const DELIVERY_TYPES = ['ub', 'rural'] as const;
+export type DeliveryType = typeof DELIVERY_TYPES[number];
+
 // Bank accounts
 export const BANK_ACCOUNTS = {
   khan: {

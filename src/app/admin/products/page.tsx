@@ -366,7 +366,7 @@ export default function AdminProductsPage() {
             <label className="block text-sm font-medium text-coffee-200 mb-2">Зурагнууд</label>
             <div className="flex flex-wrap items-start gap-3">
               {formData.imageUrls.map((url, index) => (
-                <div key={index} className="relative w-20 h-20 rounded-lg overflow-hidden bg-coffee-800 group">
+                <div key={index} className="relative w-24 h-24 rounded-lg overflow-hidden bg-coffee-800 group">
                   <Image
                     src={url}
                     alt={`Preview ${index + 1}`}
@@ -374,20 +374,21 @@ export default function AdminProductsPage() {
                     className="object-cover"
                   />
                   {index === 0 && (
-                    <span className="absolute bottom-0 left-0 right-0 bg-coffee-500 text-white text-[10px] text-center py-0.5">
+                    <span className="absolute bottom-0 left-0 right-0 bg-coffee-500/80 text-white text-[10px] text-center py-0.5">
                       Үндсэн
                     </span>
                   )}
                   <button
                     type="button"
                     onClick={() => handleRemoveImage(index)}
-                    className="absolute top-1 right-1 p-1 bg-red-500 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute -top-1 -right-1 p-1 bg-red-500 hover:bg-red-600 rounded-full text-white shadow-lg transition-colors z-10"
+                    title="Зураг устгах"
                   >
-                    <X className="w-3 h-3" />
+                    <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
               ))}
-              <label className="w-20 h-20 rounded-lg border-2 border-dashed border-coffee-700 flex flex-col items-center justify-center cursor-pointer hover:border-coffee-500 transition-colors">
+              <label className="w-24 h-24 rounded-lg border-2 border-dashed border-coffee-700 flex flex-col items-center justify-center cursor-pointer hover:border-coffee-500 transition-colors">
                 {uploading ? (
                   <Loader2 className="w-5 h-5 text-coffee-400 animate-spin" />
                 ) : (

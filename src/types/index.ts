@@ -1,4 +1,4 @@
-import { CategoryId, OrderStatus, PaymentStatus } from '@/lib/constants';
+import { CategoryId, OrderStatus, PaymentStatus, DeliveryType } from '@/lib/constants';
 
 // Product types
 export interface ProductSize {
@@ -64,13 +64,18 @@ export interface Order {
   customerName: string;
   customerPhone: string;
   customerEmail: string;
+  deliveryType: DeliveryType;
   deliveryAddress: string;
   deliveryDistrict: string;
+  deliveryAimag?: string;
+  deliverySum?: string;
   notes?: string;
   status: OrderStatus;
   paymentStatus: PaymentStatus;
   paymentRef?: string;
   paymentMethod?: string;
+  bylCheckoutId?: number;
+  bylCheckoutUrl?: string;
   paidAt?: Date;
   userId?: string;
   createdAt: Date;

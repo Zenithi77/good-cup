@@ -4,27 +4,31 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { ArrowLeft, MapPin, User, CreditCard, Loader2, AlertTriangle, Truck, Package, Copy, Check, Building2, UserPlus, LogIn, UserX } from 'lucide-react';
+import { ArrowLeft, MapPin, User, CreditCard, Loader2, AlertTriangle, Truck, Package, Copy, Check, Building2, UserPlus, LogIn, UserX, Mountain } from 'lucide-react';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useCartStore } from '@/store/cartStore';
 import { useAuthStore } from '@/store/authStore';
 import { formatPrice, getDeliveryMessage } from '@/lib/utils';
 import { UB_DISTRICTS, MINIMUM_ORDER_AMOUNT, BANK_ACCOUNTS } from '@/lib/constants';
+import { AIMAGS, getSumsByAimag } from '@/lib/aimags';
 import { Button, Input, Select, Modal } from '@/components/ui';
 import toast from 'react-hot-toast';
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, getTotal, clearCart } = useCartStore();
-  const { user } = useAuthStore();
+  const { user, isAdmin } = useAuthStore();
   
   const [formData, setFormData] = useState({
     customerName: user?.name || '',
     customerPhone: user?.phone || '',
     customerEmail: user?.email || '',
+    deliveryType: 'ub' as 'ub' | 'rural',
     deliveryAddress: '',
     deliveryDistrict: UB_DISTRICTS[0],
+    deliveryAimag: AIMAGS[0].name,
+    deliverySum: AIMAGS[0].sums[0],
     notes: '',
   });
   
@@ -34,12 +38,16 @@ export default function CheckoutPage() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [pendingSubmit, setPendingSubmit] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'bank_transfer' | 'byl'>('bank_transfer');
   const [createdOrderRef, setCreatedOrderRef] = useState<string | null>(null);
   const [createdOrderTotal, setCreatedOrderTotal] = useState<number>(0);
   const [copied, setCopied] = useState<string | null>(null);
   
   const total = getTotal();
   const deliveryInfo = getDeliveryMessage();
+
+  // Get current aimag's sums
+  const currentSums = getSumsByAimag(formData.deliveryAimag);
 
   const copyToClipboard = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
@@ -61,7 +69,15 @@ export default function CheckoutPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => {
+      const updated = { ...prev, [name]: value };
+      // Reset sum when aimag changes
+      if (name === 'deliveryAimag') {
+        const sums = getSumsByAimag(value);
+        updated.deliverySum = sums[0] || '';
+      }
+      return updated;
+    });
   };
 
   // Show terms modal first (or auth modal if not logged in)
@@ -112,9 +128,9 @@ export default function CheckoutPage() {
     setLoading(true);
 
     try {
-      // Generate payment reference
+      // Generate payment reference for bank transfer
       const ref = Date.now().toString().slice(-6).toUpperCase();
-      
+
       // Create order in Firestore
       const orderData = {
         items: items.map(item => ({
@@ -129,31 +145,58 @@ export default function CheckoutPage() {
         customerName: formData.customerName,
         customerPhone: formData.customerPhone,
         customerEmail: formData.customerEmail,
+        deliveryType: formData.deliveryType,
         deliveryAddress: formData.deliveryAddress,
-        deliveryDistrict: formData.deliveryDistrict,
+        deliveryDistrict: formData.deliveryType === 'ub' ? formData.deliveryDistrict : '',
+        deliveryAimag: formData.deliveryType === 'rural' ? formData.deliveryAimag : '',
+        deliverySum: formData.deliveryType === 'rural' ? formData.deliverySum : '',
         notes: formData.notes,
         status: 'Pending',
         paymentStatus: 'Pending',
-        paymentRef: ref,
-        paymentMethod: 'bank_transfer',
+        paymentRef: paymentMethod === 'bank_transfer' ? ref : undefined,
+        paymentMethod,
         userId: user?.id || null,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
 
-      await addDoc(collection(db, 'orders'), orderData);
-      
-      // Save the payment reference and total for the modal
-      setCreatedOrderRef(ref);
-      setCreatedOrderTotal(total);
-      
-      // Clear cart
-      clearCart();
-      
-      // Show payment modal with bank details
-      setShowPaymentModal(true);
-      toast.success('Захиалга амжилттай үүслээ!');
-      
+      const docRef = await addDoc(collection(db, 'orders'), orderData);
+      const orderId = docRef.id;
+
+      if (paymentMethod === 'byl') {
+        // Byl checkout flow (admin only)
+        const bylResponse = await fetch('/api/byl/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items: items.map(item => ({
+              name: item.name,
+              price: item.price,
+              quantity: item.quantity,
+              size: item.size,
+              productId: item.productId,
+            })),
+            orderId,
+            customerEmail: formData.customerEmail,
+          }),
+        });
+
+        if (!bylResponse.ok) {
+          throw new Error('Failed to create payment checkout');
+        }
+
+        const { checkoutUrl } = await bylResponse.json();
+        clearCart();
+        toast.success('Төлбөрийн хуудас руу шилжүүлж байна...');
+        window.location.href = checkoutUrl;
+      } else {
+        // Bank transfer flow (default)
+        setCreatedOrderRef(ref);
+        setCreatedOrderTotal(total);
+        clearCart();
+        setShowPaymentModal(true);
+        toast.success('Захиалга амжилттай үүслээ!');
+      }
     } catch (error) {
       console.error('Error creating order:', error);
       toast.error('Захиалга үүсгэхэд алдаа гарлаа');
@@ -256,19 +299,74 @@ export default function CheckoutPage() {
                 </h2>
 
                 <div className="space-y-4">
-                  <Select
-                    label="Дүүрэг"
-                    name="deliveryDistrict"
-                    value={formData.deliveryDistrict}
-                    onChange={handleInputChange}
-                    options={UB_DISTRICTS.map(d => ({ value: d, label: d }))}
-                  />
+                  {/* Delivery Type Toggle */}
+                  <div>
+                    <label className="block text-sm font-medium text-coffee-200 mb-2">Хүргэлтийн бүс</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, deliveryType: 'ub' }))}
+                        className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-all ${
+                          formData.deliveryType === 'ub'
+                            ? 'border-coffee-500 bg-coffee-500/10 text-coffee-100'
+                            : 'border-coffee-700 bg-coffee-900 text-coffee-400 hover:border-coffee-600'
+                        }`}
+                      >
+                        <MapPin className="w-4 h-4" />
+                        <span className="font-medium">Улаанбаатар</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, deliveryType: 'rural' }))}
+                        className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-all ${
+                          formData.deliveryType === 'rural'
+                            ? 'border-coffee-500 bg-coffee-500/10 text-coffee-100'
+                            : 'border-coffee-700 bg-coffee-900 text-coffee-400 hover:border-coffee-600'
+                        }`}
+                      >
+                        <Mountain className="w-4 h-4" />
+                        <span className="font-medium">Хөдөө орон нутаг</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* UB District Selection */}
+                  {formData.deliveryType === 'ub' && (
+                    <Select
+                      label="Дүүрэг"
+                      name="deliveryDistrict"
+                      value={formData.deliveryDistrict}
+                      onChange={handleInputChange}
+                      options={UB_DISTRICTS.map(d => ({ value: d, label: d }))}
+                    />
+                  )}
+
+                  {/* Rural: Aimag & Sum Selection */}
+                  {formData.deliveryType === 'rural' && (
+                    <>
+                      <Select
+                        label="Аймаг"
+                        name="deliveryAimag"
+                        value={formData.deliveryAimag}
+                        onChange={handleInputChange}
+                        options={AIMAGS.map(a => ({ value: a.name, label: a.name }))}
+                      />
+                      <Select
+                        label="Сум / Төв"
+                        name="deliverySum"
+                        value={formData.deliverySum}
+                        onChange={handleInputChange}
+                        options={currentSums.map(s => ({ value: s, label: s }))}
+                      />
+                    </>
+                  )}
+
                   <Input
                     label="Дэлгэрэнгүй хаяг"
                     name="deliveryAddress"
                     value={formData.deliveryAddress}
                     onChange={handleInputChange}
-                    placeholder="Хороо, байр, тоот..."
+                    placeholder={formData.deliveryType === 'ub' ? 'Хороо, байр, тоот...' : 'Гудамж, байр, тоот...'}
                     required
                   />
                   <div>
@@ -293,6 +391,43 @@ export default function CheckoutPage() {
                   </p>
                 </div>
               </div>
+
+              {/* Payment Method - Admin only */}
+              {isAdmin && (
+                <div className="bg-coffee-900 rounded-2xl p-6 border border-coffee-800">
+                  <h2 className="text-lg font-semibold text-white mb-4 flex items-center">
+                    <CreditCard className="w-5 h-5 mr-2 text-coffee-300" />
+                    Төлбөрийн арга
+                    <span className="ml-2 text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full">Admin</span>
+                  </h2>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('bank_transfer')}
+                      className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-all ${
+                        paymentMethod === 'bank_transfer'
+                          ? 'border-coffee-500 bg-coffee-500/10 text-coffee-100'
+                          : 'border-coffee-700 bg-coffee-900 text-coffee-400 hover:border-coffee-600'
+                      }`}
+                    >
+                      <Building2 className="w-4 h-4" />
+                      <span className="font-medium">Банк шилжүүлэг</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('byl')}
+                      className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-all ${
+                        paymentMethod === 'byl'
+                          ? 'border-green-500 bg-green-500/10 text-green-300'
+                          : 'border-coffee-700 bg-coffee-900 text-coffee-400 hover:border-coffee-600'
+                      }`}
+                    >
+                      <CreditCard className="w-4 h-4" />
+                      <span className="font-medium">Byl.mn (QPay)</span>
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Submit */}
               <Button
@@ -518,7 +653,7 @@ export default function CheckoutPage() {
         </div>
       </Modal>
 
-      {/* Payment Info Modal - Shows after order is created */}
+      {/* Payment Info Modal - Bank Transfer (Shows after order is created) */}
       <Modal
         isOpen={showPaymentModal}
         onClose={handleGoToOrders}
