@@ -20,7 +20,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const origin = request.headers.get('origin') || process.env.NEXT_PUBLIC_BASE_URL || '';
+    const origin = process.env.NEXT_PUBLIC_BASE_URL 
+      || request.headers.get('origin') 
+      || `https://${request.headers.get('host')}`;
+
+    if (!origin || origin === 'https://null' || origin.includes('localhost')) {
+      return NextResponse.json(
+        { error: 'Could not determine site URL. Set NEXT_PUBLIC_BASE_URL in env.' },
+        { status: 400 }
+      );
+    }
 
     // Map cart items to Byl checkout format
     const bylItems = items.map((item: { name: string; price: number; quantity: number; size: string; productId: string }) => ({
@@ -46,9 +55,10 @@ export async function POST(request: NextRequest) {
       checkoutUrl: result.data.url,
     });
   } catch (error) {
-    console.error('Error creating Byl checkout:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('Error creating Byl checkout:', errorMessage);
     return NextResponse.json(
-      { error: 'Failed to create checkout' },
+      { error: 'Failed to create checkout', details: errorMessage },
       { status: 500 }
     );
   }

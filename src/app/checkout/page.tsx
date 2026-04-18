@@ -182,7 +182,9 @@ export default function CheckoutPage() {
         });
 
         if (!bylResponse.ok) {
-          throw new Error('Failed to create payment checkout');
+          const errData = await bylResponse.json().catch(() => ({}));
+          console.error('Byl checkout error:', errData);
+          throw new Error(errData.details || 'Failed to create payment checkout');
         }
 
         const { checkoutUrl } = await bylResponse.json();

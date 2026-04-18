@@ -75,7 +75,7 @@ export async function createBylCheckout(params: CreateCheckoutParams): Promise<B
   if (!response.ok) {
     const errorText = await response.text();
     console.error('Byl API error:', response.status, errorText);
-    throw new Error(`Byl API error: ${response.status}`);
+    throw new Error(`Byl API error ${response.status}: ${errorText}`);
   }
 
   return response.json();
