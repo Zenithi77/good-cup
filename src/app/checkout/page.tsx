@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { ArrowLeft, MapPin, User, CreditCard, Loader2, AlertTriangle, Truck, Package, Copy, Check, Building2, UserPlus, LogIn, UserX, Mountain } from 'lucide-react';
+import { ArrowLeft, MapPin, User, CreditCard, Loader2, AlertTriangle, Truck, Package, Copy, Check, Building2, UserPlus, LogIn, UserX, Mountain, QrCode, Smartphone } from 'lucide-react';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useCartStore } from '@/store/cartStore';
@@ -36,12 +36,16 @@ export default function CheckoutPage() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showQPayModal, setShowQPayModal] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [pendingSubmit, setPendingSubmit] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'bank_transfer' | 'byl'>('bank_transfer');
+  const [paymentMethod, setPaymentMethod] = useState<'bank_transfer' | 'qpay'>('qpay');
   const [createdOrderRef, setCreatedOrderRef] = useState<string | null>(null);
   const [createdOrderTotal, setCreatedOrderTotal] = useState<number>(0);
   const [copied, setCopied] = useState<string | null>(null);
+  const [qpayData, setQpayData] = useState<{ invoiceId: string; qrImage: string; urls: Array<{ name: string; description: string; logo: string; link: string }> } | null>(null);
+  const [qpayChecking, setQpayChecking] = useState(false);
+  const [qpayPaid, setQpayPaid] = useState(false);
   
   const total = getTotal();
   const deliveryInfo = getDeliveryMessage();
@@ -55,6 +59,36 @@ export default function CheckoutPage() {
     toast.success('Хуулагдлаа');
     setTimeout(() => setCopied(null), 2000);
   };
+
+  // Poll QPay payment status
+  useEffect(() => {
+    if (!showQPayModal || !qpayData?.invoiceId || qpayPaid) return;
+
+    setQpayChecking(true);
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch('/api/qpay/check', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ invoiceId: qpayData.invoiceId }),
+        });
+        const data = await res.json();
+        if (data.isPaid) {
+          setQpayPaid(true);
+          setQpayChecking(false);
+          clearInterval(interval);
+          toast.success('Төлбөр амжилттай төлөгдлөө!');
+        }
+      } catch (err) {
+        console.error('QPay check error:', err);
+      }
+    }, 3000);
+
+    return () => {
+      clearInterval(interval);
+      setQpayChecking(false);
+    };
+  }, [showQPayModal, qpayData?.invoiceId, qpayPaid]);
 
   useEffect(() => {
     if (user) {
@@ -163,34 +197,43 @@ export default function CheckoutPage() {
       const docRef = await addDoc(collection(db, 'orders'), orderData);
       const orderId = docRef.id;
 
-      if (paymentMethod === 'byl') {
-        // Byl checkout flow (admin only)
-        const bylResponse = await fetch('/api/byl/checkout', {
+      if (paymentMethod === 'qpay') {
+        // QPay checkout flow
+        const qpayResponse = await fetch('/api/qpay/invoice', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            items: items.map(item => ({
-              name: item.name,
-              price: item.price,
-              quantity: item.quantity,
-              size: item.size,
-              productId: item.productId,
-            })),
             orderId,
-            customerEmail: formData.customerEmail,
+            amount: total,
+            customerName: formData.customerName,
+            customerPhone: formData.customerPhone,
           }),
         });
 
-        if (!bylResponse.ok) {
-          const errData = await bylResponse.json().catch(() => ({}));
-          console.error('Byl checkout error:', errData);
-          throw new Error(errData.details || 'Failed to create payment checkout');
+        if (!qpayResponse.ok) {
+          const errData = await qpayResponse.json().catch(() => ({}));
+          console.error('QPay invoice error:', errData);
+          throw new Error(errData.details || 'QPay нэхэмжлэх үүсгэхэд алдаа гарлаа');
         }
 
-        const { checkoutUrl } = await bylResponse.json();
+        const qpayResult = await qpayResponse.json();
+
+        // Save QPay invoice ID to Firestore
+        const { updateDoc, doc } = await import('firebase/firestore');
+        await updateDoc(doc(db, 'orders', orderId), {
+          qpayInvoiceId: qpayResult.invoiceId,
+        });
+
+        setQpayData({
+          invoiceId: qpayResult.invoiceId,
+          qrImage: qpayResult.qrImage,
+          urls: qpayResult.urls || [],
+        });
+        setCreatedOrderTotal(total);
+        setQpayPaid(false);
         clearCart();
-        toast.success('Төлбөрийн хуудас руу шилжүүлж байна...');
-        window.location.href = checkoutUrl;
+        setShowQPayModal(true);
+        toast.success('QPay нэхэмжлэх үүслээ!');
       } else {
         // Bank transfer flow (default)
         setCreatedOrderRef(ref);
@@ -214,7 +257,7 @@ export default function CheckoutPage() {
   };
 
   // Show empty cart message only if cart is empty AND payment modal is not showing
-  if (items.length === 0 && !showPaymentModal) {
+  if (items.length === 0 && !showPaymentModal && !showQPayModal) {
     return (
       <div className="min-h-screen py-8 flex items-center justify-center">
         <div className="text-center">
@@ -394,42 +437,39 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* Payment Method - Admin only */}
-              {isAdmin && (
-                <div className="bg-coffee-900 rounded-2xl p-6 border border-coffee-800">
-                  <h2 className="text-lg font-semibold text-white mb-4 flex items-center">
-                    <CreditCard className="w-5 h-5 mr-2 text-coffee-300" />
-                    Төлбөрийн арга
-                    <span className="ml-2 text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full">Admin</span>
-                  </h2>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod('bank_transfer')}
-                      className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-all ${
-                        paymentMethod === 'bank_transfer'
-                          ? 'border-coffee-500 bg-coffee-500/10 text-coffee-100'
-                          : 'border-coffee-700 bg-coffee-900 text-coffee-400 hover:border-coffee-600'
-                      }`}
-                    >
-                      <Building2 className="w-4 h-4" />
-                      <span className="font-medium">Банк шилжүүлэг</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod('byl')}
-                      className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-all ${
-                        paymentMethod === 'byl'
-                          ? 'border-green-500 bg-green-500/10 text-green-300'
-                          : 'border-coffee-700 bg-coffee-900 text-coffee-400 hover:border-coffee-600'
-                      }`}
-                    >
-                      <CreditCard className="w-4 h-4" />
-                      <span className="font-medium">Byl.mn (QPay)</span>
-                    </button>
-                  </div>
+              {/* Payment Method */}
+              <div className="bg-coffee-900 rounded-2xl p-6 border border-coffee-800">
+                <h2 className="text-lg font-semibold text-white mb-4 flex items-center">
+                  <CreditCard className="w-5 h-5 mr-2 text-coffee-300" />
+                  Төлбөрийн арга
+                </h2>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('qpay')}
+                    className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-all ${
+                      paymentMethod === 'qpay'
+                        ? 'border-green-500 bg-green-500/10 text-green-300'
+                        : 'border-coffee-700 bg-coffee-900 text-coffee-400 hover:border-coffee-600'
+                    }`}
+                  >
+                    <QrCode className="w-4 h-4" />
+                    <span className="font-medium">QPay</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('bank_transfer')}
+                    className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-all ${
+                      paymentMethod === 'bank_transfer'
+                        ? 'border-coffee-500 bg-coffee-500/10 text-coffee-100'
+                        : 'border-coffee-700 bg-coffee-900 text-coffee-400 hover:border-coffee-600'
+                    }`}
+                  >
+                    <Building2 className="w-4 h-4" />
+                    <span className="font-medium">Банк шилжүүлэг</span>
+                  </button>
                 </div>
-              )}
+              </div>
 
               {/* Submit */}
               <Button
@@ -746,6 +786,87 @@ export default function CheckoutPage() {
             <Package className="w-5 h-5 mr-2" />
             Миний захиалсан бараа руу очих
           </Button>
+        </div>
+      </Modal>
+
+      {/* QPay Payment Modal */}
+      <Modal
+        isOpen={showQPayModal}
+        onClose={handleGoToOrders}
+        title="QPay төлбөр"
+        size="md"
+      >
+        <div className="space-y-6">
+          {qpayPaid ? (
+            <>
+              <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-6 text-center">
+                <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Check className="w-8 h-8 text-green-400" />
+                </div>
+                <h3 className="text-green-400 font-semibold text-lg">Төлбөр амжилттай!</h3>
+                <p className="text-green-300/70 text-sm mt-2">Таны захиалга баталгаажлаа</p>
+              </div>
+              <Button className="w-full" size="lg" onClick={handleGoToOrders}>
+                <Package className="w-5 h-5 mr-2" />
+                Миний захиалсан бараа руу очих
+              </Button>
+            </>
+          ) : (
+            <>
+              <div className="bg-coffee-800 rounded-xl p-4 text-center">
+                <span className="text-coffee-400 text-sm">Төлөх дүн</span>
+                <p className="text-white font-bold text-2xl mt-1">{formatPrice(createdOrderTotal)}</p>
+              </div>
+
+              {qpayData?.qrImage && (
+                <div className="flex flex-col items-center">
+                  <p className="text-coffee-300 text-sm mb-3 flex items-center">
+                    <QrCode className="w-4 h-4 mr-2" />
+                    QR кодыг уншуулна уу
+                  </p>
+                  <div className="bg-white p-4 rounded-xl">
+                    <img
+                      src={`data:image/png;base64,${qpayData.qrImage}`}
+                      alt="QPay QR Code"
+                      className="w-64 h-64"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {qpayData?.urls && qpayData.urls.length > 0 && (
+                <div>
+                  <p className="text-coffee-300 text-sm mb-3 flex items-center">
+                    <Smartphone className="w-4 h-4 mr-2" />
+                    Банкны апп-аар төлөх
+                  </p>
+                  <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto">
+                    {qpayData.urls.map((url, idx) => (
+                      <a
+                        key={idx}
+                        href={url.link}
+                        className="flex flex-col items-center gap-1 p-3 rounded-xl border border-coffee-700 bg-coffee-800/50 hover:bg-coffee-700/50 hover:border-coffee-500 transition-all text-center"
+                      >
+                        {url.logo && (
+                          <img src={url.logo} alt={url.name} className="w-8 h-8 rounded" />
+                        )}
+                        <span className="text-coffee-200 text-xs leading-tight">{url.description || url.name}</span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center justify-center gap-2 text-coffee-400 text-sm">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Төлбөр хүлээж байна...</span>
+              </div>
+
+              <Button variant="outline" className="w-full" onClick={handleGoToOrders}>
+                Захиалсан бараа руу очих
+              </Button>
+            </>
+          )}
         </div>
       </Modal>
     </div>
