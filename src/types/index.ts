@@ -76,7 +76,6 @@ export interface Order {
   paymentMethod?: string;
   bylCheckoutId?: number;
   bylCheckoutUrl?: string;
-  qpayInvoiceId?: string;
   paidAt?: Date;
   userId?: string;
   createdAt: Date;
