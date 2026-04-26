@@ -18,7 +18,7 @@ import toast from 'react-hot-toast';
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, getTotal, clearCart } = useCartStore();
-  const { user, isAdmin } = useAuthStore();
+  const { user } = useAuthStore();
   
   const [formData, setFormData] = useState({
     customerName: user?.name || '',
@@ -38,7 +38,7 @@ export default function CheckoutPage() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [pendingSubmit, setPendingSubmit] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'bank_transfer' | 'byl'>('bank_transfer');
+  const [paymentMethod] = useState<'bank_transfer' | 'byl'>('byl');
   const [createdOrderRef, setCreatedOrderRef] = useState<string | null>(null);
   const [createdOrderTotal, setCreatedOrderTotal] = useState<number>(0);
   const [copied, setCopied] = useState<string | null>(null);
@@ -394,42 +394,20 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* Payment Method - Admin only */}
-              {isAdmin && (
-                <div className="bg-coffee-900 rounded-2xl p-6 border border-coffee-800">
-                  <h2 className="text-lg font-semibold text-white mb-4 flex items-center">
-                    <CreditCard className="w-5 h-5 mr-2 text-coffee-300" />
-                    Төлбөрийн арга
-                    <span className="ml-2 text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full">Admin</span>
-                  </h2>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod('bank_transfer')}
-                      className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-all ${
-                        paymentMethod === 'bank_transfer'
-                          ? 'border-coffee-500 bg-coffee-500/10 text-coffee-100'
-                          : 'border-coffee-700 bg-coffee-900 text-coffee-400 hover:border-coffee-600'
-                      }`}
-                    >
-                      <Building2 className="w-4 h-4" />
-                      <span className="font-medium">Банк шилжүүлэг</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod('byl')}
-                      className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-all ${
-                        paymentMethod === 'byl'
-                          ? 'border-green-500 bg-green-500/10 text-green-300'
-                          : 'border-coffee-700 bg-coffee-900 text-coffee-400 hover:border-coffee-600'
-                      }`}
-                    >
-                      <CreditCard className="w-4 h-4" />
-                      <span className="font-medium">Byl.mn (QPay)</span>
-                    </button>
+              {/* Payment Method - Byl.mn (QPay) only */}
+              <div className="bg-coffee-900 rounded-2xl p-6 border border-coffee-800">
+                <h2 className="text-lg font-semibold text-white mb-4 flex items-center">
+                  <CreditCard className="w-5 h-5 mr-2 text-coffee-300" />
+                  Төлбөрийн арга
+                </h2>
+                <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-green-500 bg-green-500/10 text-green-300">
+                  <CreditCard className="w-5 h-5" />
+                  <div>
+                    <p className="font-medium">Byl.mn (QPay)</p>
+                    <p className="text-xs text-green-300/70">Картаар эсвэл QPay-р шууд төлөх</p>
                   </div>
                 </div>
-              )}
+              </div>
 
               {/* Submit */}
               <Button
