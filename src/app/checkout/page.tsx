@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { ArrowLeft, MapPin, User, CreditCard, Loader2, AlertTriangle, Truck, Package, Copy, Check, Building2, UserPlus, LogIn, UserX, Mountain } from 'lucide-react';
-import { collection, addDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { collection, addDoc, doc, getDoc, setDoc } from 'firebase/firestore';
+import { signInAnonymously } from 'firebase/auth';
+import { auth, db } from '@/lib/firebase';
 import { useCartStore } from '@/store/cartStore';
 import { useAuthStore } from '@/store/authStore';
 import { formatPrice, getDeliveryMessage } from '@/lib/utils';
@@ -131,6 +132,42 @@ export default function CheckoutPage() {
       // Generate payment reference for bank transfer
       const ref = Date.now().toString().slice(-6).toUpperCase();
 
+      // For guest checkouts, sign in anonymously so each guest gets a unique
+      // Firebase UID (and Firestore rules requiring auth can pass). Then
+      // create a dedicated `users/{uid}` document with role='guest' so admin
+      // can see each guest separately instead of all sharing userId=null.
+      let orderUserId: string | null = user?.id ?? null;
+      if (!user) {
+        const anonResult = await signInAnonymously(auth);
+        orderUserId = anonResult.user.uid;
+
+        const guestUserRef = doc(db, 'users', anonResult.user.uid);
+        const existing = await getDoc(guestUserRef);
+        if (!existing.exists()) {
+          await setDoc(guestUserRef, {
+            id: anonResult.user.uid,
+            name: formData.customerName,
+            email: formData.customerEmail,
+            phone: formData.customerPhone,
+            role: 'guest',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+        } else {
+          // Refresh latest contact details on the guest profile
+          await setDoc(
+            guestUserRef,
+            {
+              name: formData.customerName,
+              email: formData.customerEmail,
+              phone: formData.customerPhone,
+              updatedAt: new Date(),
+            },
+            { merge: true }
+          );
+        }
+      }
+
       // Create order in Firestore
       const orderData = {
         items: items.map(item => ({
@@ -155,7 +192,8 @@ export default function CheckoutPage() {
         paymentStatus: 'Pending',
         ...(paymentMethod === 'bank_transfer' ? { paymentRef: ref } : {}),
         paymentMethod,
-        userId: user?.id || null,
+        userId: orderUserId,
+        isGuest: !user,
         createdAt: new Date(),
         updatedAt: new Date(),
       };

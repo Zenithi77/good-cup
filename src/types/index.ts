@@ -28,7 +28,7 @@ export interface User {
   name: string;
   email: string;
   phone: string;
-  role: 'user' | 'admin';
+  role: 'user' | 'admin' | 'guest';
   address?: string;
   district?: string;
   createdAt: Date;
@@ -78,6 +78,7 @@ export interface Order {
   bylCheckoutUrl?: string;
   paidAt?: Date;
   userId?: string;
+  isGuest?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

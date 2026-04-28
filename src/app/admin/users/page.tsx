@@ -7,7 +7,7 @@ import { collection, getDocs, updateDoc, doc, orderBy, query } from 'firebase/fi
 import { db } from '@/lib/firebase';
 import { User } from '@/types';
 import { useAuthStore } from '@/store/authStore';
-import { Input, Badge, Modal, Button } from '@/components/ui';
+import { Input, Badge, Modal, Button, Select } from '@/components/ui';
 import toast from 'react-hot-toast';
 
 export default function AdminUsersPage() {
@@ -17,6 +17,7 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState<'all' | 'user' | 'admin' | 'guest'>('all');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [updating, setUpdating] = useState(false);
@@ -92,8 +93,13 @@ export default function AdminUsersPage() {
       user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.phone?.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
+    const matchesRole = roleFilter === 'all' || user.role === roleFilter;
+    return matchesSearch && matchesRole;
   });
+
+  const guestCount = users.filter(u => u.role === 'guest').length;
+  const registeredCount = users.filter(u => u.role === 'user').length;
+  const adminCount = users.filter(u => u.role === 'admin').length;
 
   if (loading || !isAdmin) {
     return (
@@ -111,19 +117,31 @@ export default function AdminUsersPage() {
             Хэрэглэгч удирдах
           </h1>
           <p className="text-coffee-400">
-            Нийт {users.length} хэрэглэгч
+            Нийт {users.length} хэрэглэгч &middot; {registeredCount} бүртгэлтэй &middot; {guestCount} зочин &middot; {adminCount} админ
           </p>
         </div>
 
-        {/* Search */}
-        <div className="mb-6">
-          <div className="relative max-w-md">
+        {/* Search & Filter */}
+        <div className="mb-6 flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-coffee-500" />
             <Input
               placeholder="Хэрэглэгч хайх..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
+            />
+          </div>
+          <div className="sm:w-56">
+            <Select
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value as typeof roleFilter)}
+              options={[
+                { value: 'all', label: 'Бүх төрөл' },
+                { value: 'user', label: 'Бүртгэлтэй' },
+                { value: 'guest', label: 'Зочин' },
+                { value: 'admin', label: 'Админ' },
+              ]}
             />
           </div>
         </div>
@@ -168,8 +186,20 @@ export default function AdminUsersPage() {
                         {user.phone || '-'}
                       </td>
                       <td className="px-4 py-3">
-                        <Badge variant={user.role === 'admin' ? 'success' : 'default'}>
-                          {user.role === 'admin' ? 'Админ' : 'Хэрэглэгч'}
+                        <Badge
+                          variant={
+                            user.role === 'admin'
+                              ? 'success'
+                              : user.role === 'guest'
+                              ? 'warning'
+                              : 'default'
+                          }
+                        >
+                          {user.role === 'admin'
+                            ? 'Админ'
+                            : user.role === 'guest'
+                            ? 'Зочин'
+                            : 'Хэрэглэгч'}
                         </Badge>
                       </td>
                       <td className="px-4 py-3 text-coffee-400 text-sm">
@@ -233,8 +263,20 @@ export default function AdminUsersPage() {
                   <h3 className="text-coffee-100 font-bold text-lg">
                     {selectedUser.name || 'Нэргүй'}
                   </h3>
-                  <Badge variant={selectedUser.role === 'admin' ? 'success' : 'default'}>
-                    {selectedUser.role === 'admin' ? 'Админ' : 'Хэрэглэгч'}
+                  <Badge
+                    variant={
+                      selectedUser.role === 'admin'
+                        ? 'success'
+                        : selectedUser.role === 'guest'
+                        ? 'warning'
+                        : 'default'
+                    }
+                  >
+                    {selectedUser.role === 'admin'
+                      ? 'Админ'
+                      : selectedUser.role === 'guest'
+                      ? 'Зочин'
+                      : 'Хэрэглэгч'}
                   </Badge>
                 </div>
               </div>

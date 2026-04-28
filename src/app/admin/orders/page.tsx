@@ -231,8 +231,18 @@ export default function AdminOrdersPage() {
                           </p>
                         </td>
                         <td className="px-4 py-3">
-                          <p className="text-coffee-100">{order.customerName}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-coffee-100">{order.customerName}</p>
+                            {order.isGuest && (
+                              <Badge variant="warning">Зочин</Badge>
+                            )}
+                          </div>
                           <p className="text-coffee-500 text-xs">{order.customerPhone}</p>
+                          {order.userId && (
+                            <p className="text-coffee-600 text-[10px] font-mono">
+                              {order.userId.slice(0, 10)}…
+                            </p>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-coffee-100 font-medium">
                           {formatPrice(order.total)}
