@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
@@ -39,6 +39,10 @@ export default function CheckoutPage() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [pendingSubmit, setPendingSubmit] = useState(false);
+  // Synchronous re-entrancy guard: state-based `loading` is not enough to block
+  // rapid double-clicks because setState is async. This ref blocks any duplicate
+  // call to createOrder before the next render flushes.
+  const submittingRef = useRef(false);
   const [paymentMethod] = useState<'bank_transfer' | 'byl'>('byl');
   const [createdOrderRef, setCreatedOrderRef] = useState<string | null>(null);
   const [createdOrderTotal, setCreatedOrderTotal] = useState<number>(0);
@@ -120,16 +124,24 @@ export default function CheckoutPage() {
       return;
     }
 
+    // Guard against double-click / rapid re-entry
+    if (submittingRef.current) return;
+
     setShowTermsModal(false);
     setPendingSubmit(true);
     await createOrder();
   };
 
   const createOrder = async () => {
+    // Synchronous guard — prevents duplicate orders if this is called twice
+    // in the same tick (e.g. double-click before React state updates).
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     setLoading(true);
 
     try {
-      // Generate payment reference for bank transfer
+      // Short, human-readable reference shown to customer + admin (also embedded
+      // into Byl line-item names so it appears on the QPay payment screen).
       const ref = Date.now().toString().slice(-6).toUpperCase();
 
       // For guest checkouts, sign in anonymously so each guest gets a unique
@@ -190,7 +202,7 @@ export default function CheckoutPage() {
         notes: formData.notes,
         status: 'Pending',
         paymentStatus: 'Pending',
-        ...(paymentMethod === 'bank_transfer' ? { paymentRef: ref } : {}),
+        paymentRef: ref,
         paymentMethod,
         userId: orderUserId,
         isGuest: !user,
@@ -215,6 +227,7 @@ export default function CheckoutPage() {
               productId: item.productId,
             })),
             orderId,
+            orderRef: ref,
             customerEmail: formData.customerEmail,
           }),
         });
@@ -240,6 +253,11 @@ export default function CheckoutPage() {
     } catch (error) {
       console.error('Error creating order:', error);
       toast.error('Захиалга үүсгэхэд алдаа гарлаа');
+      // Only release the guard on error so the user can retry.
+      // On success we keep it locked because the page navigates away
+      // (Byl checkout) or shows a success modal — we never want a
+      // second order to be created from the same submission.
+      submittingRef.current = false;
     } finally {
       setLoading(false);
       setPendingSubmit(false);
@@ -663,9 +681,16 @@ export default function CheckoutPage() {
             <Button
               className="flex-1"
               onClick={handleAcceptTerms}
-              disabled={!termsAccepted}
+              disabled={!termsAccepted || loading || pendingSubmit}
             >
-              Зөвшөөрч үргэлжлүүлэх
+              {loading || pendingSubmit ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Үүсгэж байна...
+                </>
+              ) : (
+                'Зөвшөөрч үргэлжлүүлэх'
+              )}
             </Button>
           </div>
         </div>

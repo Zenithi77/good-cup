@@ -163,9 +163,9 @@ export default function AdminOrdersPage() {
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-coffee-500" />
+        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+          <div className="relative flex-1 sm:max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-coffee-500 pointer-events-none" />
             <Input
               placeholder="Захиалга хайх..."
               value={searchQuery}
@@ -183,13 +183,14 @@ export default function AdminOrdersPage() {
                 label: statusConfig[s as keyof typeof statusConfig]?.label || s 
               }))
             ]}
-            className="w-48"
+            className="w-full sm:w-48"
           />
         </div>
 
-        {/* Orders Table */}
+        {/* Orders Table (desktop) / Cards (mobile) */}
         <div className="bg-coffee-900 rounded-xl border border-coffee-800 overflow-hidden">
-          <div className="overflow-x-auto">
+          {/* Desktop table */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
               <thead className="bg-coffee-800">
                 <tr>
@@ -277,6 +278,66 @@ export default function AdminOrdersPage() {
               </tbody>
             </table>
           </div>
+
+          {/* Mobile cards */}
+          <div className="md:hidden divide-y divide-coffee-800">
+            {loadingOrders ? (
+              <div className="px-4 py-10 text-center text-coffee-400">
+                <Loader2 className="w-6 h-6 animate-spin mx-auto" />
+              </div>
+            ) : filteredOrders.length === 0 ? (
+              <div className="px-4 py-10 text-center text-coffee-400">
+                Захиалга олдсонгүй
+              </div>
+            ) : (
+              filteredOrders.map((order) => {
+                const status = statusConfig[order.status as keyof typeof statusConfig];
+                const paymentStatus = paymentStatusConfig[order.paymentStatus as keyof typeof paymentStatusConfig];
+
+                return (
+                  <button
+                    key={order.id}
+                    onClick={() => viewOrder(order)}
+                    className="w-full text-left p-4 active:bg-coffee-800/70 hover:bg-coffee-800/40 transition-colors"
+                  >
+                    {/* Top row: order id + amount */}
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <div className="min-w-0">
+                        <p className="text-coffee-100 font-semibold font-mono text-sm">
+                          #{order.paymentRef || order.id.slice(-6).toUpperCase()}
+                        </p>
+                        <p className="text-coffee-500 text-xs mt-0.5">
+                          {order.createdAt?.toLocaleDateString('mn-MN', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-coffee-100 font-bold">{formatPrice(order.total)}</p>
+                        <p className="text-coffee-500 text-xs">{order.items.length} бараа</p>
+                      </div>
+                    </div>
+
+                    {/* Customer */}
+                    <div className="flex items-center gap-2 mb-3 min-w-0">
+                      <p className="text-coffee-200 text-sm truncate">{order.customerName}</p>
+                      {order.isGuest && <Badge variant="warning">Зочин</Badge>}
+                      <span className="text-coffee-500 text-xs ml-auto shrink-0">{order.customerPhone}</span>
+                    </div>
+
+                    {/* Status badges */}
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant={status?.color}>{status?.label}</Badge>
+                      <Badge variant={paymentStatus?.color}>{paymentStatus?.label}</Badge>
+                    </div>
+                  </button>
+                );
+              })
+            )}
+          </div>
         </div>
       </div>
 
@@ -290,7 +351,7 @@ export default function AdminOrdersPage() {
         {selectedOrder && (
           <div className="space-y-6">
             {/* Status Controls */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-coffee-200 mb-2">Захиалгын статус</label>
                 <Select
@@ -320,32 +381,32 @@ export default function AdminOrdersPage() {
             {/* Customer Info */}
             <div className="bg-coffee-800 rounded-xl p-4">
               <h3 className="text-coffee-200 font-medium mb-3">Хэрэглэгчийн мэдээлэл</h3>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div>
-                  <span className="text-coffee-400">Нэр:</span>
-                  <span className="text-coffee-100 ml-2">{selectedOrder.customerName}</span>
+              <div className="space-y-2 text-sm">
+                <div className="flex flex-col sm:flex-row sm:gap-2">
+                  <span className="text-coffee-400 sm:w-20 shrink-0">Нэр:</span>
+                  <span className="text-coffee-100 break-words">{selectedOrder.customerName}</span>
                 </div>
-                <div>
-                  <span className="text-coffee-400">Утас:</span>
-                  <span className="text-coffee-100 ml-2">{selectedOrder.customerPhone}</span>
+                <div className="flex flex-col sm:flex-row sm:gap-2">
+                  <span className="text-coffee-400 sm:w-20 shrink-0">Утас:</span>
+                  <a href={`tel:${selectedOrder.customerPhone}`} className="text-coffee-100 break-all hover:text-coffee-50 underline-offset-2 hover:underline">{selectedOrder.customerPhone}</a>
                 </div>
-                <div className="col-span-2">
-                  <span className="text-coffee-400">И-мэйл:</span>
-                  <span className="text-coffee-100 ml-2">{selectedOrder.customerEmail}</span>
+                <div className="flex flex-col sm:flex-row sm:gap-2">
+                  <span className="text-coffee-400 sm:w-20 shrink-0">И-мэйл:</span>
+                  <a href={`mailto:${selectedOrder.customerEmail}`} className="text-coffee-100 break-all hover:text-coffee-50 underline-offset-2 hover:underline">{selectedOrder.customerEmail}</a>
                 </div>
-                <div className="col-span-2">
-                  <span className="text-coffee-400">Хаяг:</span>
-                  <span className="text-coffee-100 ml-2">
-                    {selectedOrder.deliveryType === 'rural' 
+                <div className="flex flex-col sm:flex-row sm:gap-2">
+                  <span className="text-coffee-400 sm:w-20 shrink-0">Хаяг:</span>
+                  <span className="text-coffee-100 break-words">
+                    {selectedOrder.deliveryType === 'rural'
                       ? `${selectedOrder.deliveryAimag} аймаг, ${selectedOrder.deliverySum}, ${selectedOrder.deliveryAddress}`
                       : `${selectedOrder.deliveryDistrict}, ${selectedOrder.deliveryAddress}`
                     }
                   </span>
                 </div>
                 {selectedOrder.notes && (
-                  <div className="col-span-2">
-                    <span className="text-coffee-400">Тэмдэглэл:</span>
-                    <span className="text-coffee-100 ml-2">{selectedOrder.notes}</span>
+                  <div className="flex flex-col sm:flex-row sm:gap-2">
+                    <span className="text-coffee-400 sm:w-20 shrink-0">Тэмдэглэл:</span>
+                    <span className="text-coffee-100 break-words">{selectedOrder.notes}</span>
                   </div>
                 )}
               </div>
@@ -356,9 +417,9 @@ export default function AdminOrdersPage() {
               <h3 className="text-coffee-200 font-medium mb-3">Бүтээгдэхүүн</h3>
               <div className="space-y-2">
                 {selectedOrder.items.map((item, index) => (
-                  <div key={index} className="flex items-center gap-4 bg-coffee-800 rounded-lg p-3">
+                  <div key={index} className="flex items-center gap-3 sm:gap-4 bg-coffee-800 rounded-lg p-3">
                     {/* Product Image */}
-                    <div className="w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-coffee-700 relative">
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 flex-shrink-0 rounded-lg overflow-hidden bg-coffee-700 relative">
                       {item.imageUrl ? (
                         <Image
                           src={item.imageUrl}
@@ -375,11 +436,11 @@ export default function AdminOrdersPage() {
                     </div>
                     {/* Product Info */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-coffee-100 font-medium truncate">{item.productName}</p>
-                      <p className="text-coffee-400 text-sm">{item.size} × {item.quantity}</p>
+                      <p className="text-coffee-100 font-medium text-sm sm:text-base truncate">{item.productName}</p>
+                      <p className="text-coffee-400 text-xs sm:text-sm">{item.size} × {item.quantity}</p>
                     </div>
                     {/* Price */}
-                    <p className="text-coffee-100 font-medium flex-shrink-0">
+                    <p className="text-coffee-100 font-medium text-sm sm:text-base flex-shrink-0">
                       {formatPrice(item.price * item.quantity)}
                     </p>
                   </div>

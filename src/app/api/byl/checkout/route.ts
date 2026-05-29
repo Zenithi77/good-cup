@@ -4,7 +4,7 @@ import { createBylCheckout } from '@/lib/byl';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { items, orderId, customerEmail } = body;
+    const { items, orderId, orderRef, customerEmail } = body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
@@ -31,12 +31,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Map cart items to Byl checkout format
+    // Map cart items to Byl checkout format.
+    // We append the short order reference (#REF) to each item name so it
+    // shows up on the QPay / Byl payment screen — Byl/QPay don't expose a
+    // way to set the bank transaction memo directly, so embedding it here
+    // is the only place the customer sees the order ref while paying.
+    const refSuffix = orderRef ? ` — #${orderRef}` : '';
     const bylItems = items.map((item: { name: string; price: number; quantity: number; size: string; productId: string }) => ({
       price_data: {
         unit_amount: item.price,
         product_data: {
-          name: `${item.name} (${item.size})`,
+          name: `${item.name} (${item.size})${refSuffix}`,
         },
       },
       quantity: item.quantity,
