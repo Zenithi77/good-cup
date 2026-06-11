@@ -8,11 +8,11 @@ interface BadgeProps {
 }
 
 const variants = {
-  default: 'bg-coffee-700 text-coffee-200',
-  success: 'bg-green-500/20 text-green-400 border border-green-500/30',
-  warning: 'bg-orange-500/20 text-orange-400 border border-orange-500/30',
-  error: 'bg-red-500/20 text-red-400 border border-red-500/30',
-  info: 'bg-blue-500/20 text-blue-400 border border-blue-500/30',
+  default: 'bg-coffee-700 text-coffee-200 border border-coffee-600/50',
+  success: 'bg-green-500/15 text-green-400 border border-green-500/30',
+  warning: 'bg-orange-500/15 text-orange-400 border border-orange-500/30',
+  error: 'bg-red-500/15 text-red-400 border border-red-500/30',
+  info: 'bg-blue-500/15 text-blue-400 border border-blue-500/30',
 };
 
 export function Badge({ variant = 'default', children }: BadgeProps) {
@@ -33,9 +33,9 @@ export function ProductBadge({ badge }: ProductBadgeProps) {
   if (!badge) return null;
 
   const badgeConfig = {
-    bestseller: { text: 'Бестселлер', color: 'bg-orange-500' },
-    new: { text: 'Шинэ', color: 'bg-green-500' },
-    sale: { text: 'Хямдрал', color: 'bg-red-500' },
+    bestseller: { text: 'Бестселлер', color: 'bg-gradient-to-r from-orange-500 to-amber-500' },
+    new: { text: 'Шинэ', color: 'bg-gradient-to-r from-green-500 to-emerald-500' },
+    sale: { text: 'Хямдрал', color: 'bg-gradient-to-r from-red-500 to-rose-500' },
   };
 
   const config = badgeConfig[badge];

@@ -39,9 +39,9 @@ export function Header() {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2">
-            <Coffee className="w-8 h-8 text-coffee-500" />
-            <span className="text-xl font-bold text-coffee-700">Good Cup</span>
+          <Link href="/" className="flex items-center space-x-2 group">
+            <Coffee className="w-8 h-8 text-coffee-500 transition-transform duration-300 group-hover:-rotate-12" />
+            <span className="text-xl font-bold text-gradient-coffee">Good Cup</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -50,10 +50,10 @@ export function Header() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                className={`relative px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
                   pathname === link.href
-                    ? 'bg-coffee-100 text-coffee-700'
-                    : 'text-coffee-600 hover:text-coffee-700 hover:bg-coffee-50'
+                    ? 'bg-gradient-to-b from-coffee-500 to-coffee-600 text-white shadow-md shadow-coffee-500/25'
+                    : 'text-coffee-600 hover:text-coffee-700 hover:bg-coffee-100'
                 }`}
               >
                 {link.label}
@@ -62,10 +62,10 @@ export function Header() {
             {isAdmin && (
               <Link
                 href="/admin"
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
                   pathname.startsWith('/admin')
-                    ? 'bg-coffee-100 text-coffee-700'
-                    : 'text-coffee-600 hover:text-coffee-700 hover:bg-coffee-50'
+                    ? 'bg-gradient-to-b from-coffee-500 to-coffee-600 text-white shadow-md shadow-coffee-500/25'
+                    : 'text-coffee-600 hover:text-coffee-700 hover:bg-coffee-100'
                 }`}
               >
                 <Settings className="w-4 h-4 inline mr-1" />
@@ -79,14 +79,14 @@ export function Header() {
             {/* Cart Button - Desktop only */}
             <button
               onClick={openCart}
-              className="hidden md:flex relative p-2 rounded-lg text-coffee-600 hover:text-coffee-700 hover:bg-coffee-100 transition-colors"
+              className="hidden md:flex relative p-2 rounded-xl text-coffee-600 hover:text-coffee-700 hover:bg-coffee-100 transition-all hover:scale-105"
             >
               <ShoppingBag className="w-6 h-6" />
               {itemCount > 0 && (
                 <motion.span
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  className="absolute -top-1 -right-1 bg-coffee-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold"
+                  className="absolute -top-1 -right-1 bg-gradient-to-br from-coffee-500 to-coffee-700 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold shadow-md shadow-coffee-500/40 ring-2 ring-white"
                 >
                   {itemCount > 99 ? '99+' : itemCount}
                 </motion.span>
@@ -97,10 +97,10 @@ export function Header() {
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                className="p-2 rounded-lg text-coffee-600 hover:text-coffee-700 hover:bg-coffee-100 transition-colors"
+                className="p-2 rounded-xl text-coffee-600 hover:text-coffee-700 hover:bg-coffee-100 transition-all"
               >
                 {user ? (
-                  <div className="w-8 h-8 rounded-full bg-coffee-500 text-white flex items-center justify-center font-bold text-sm">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-coffee-400 to-coffee-600 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-coffee-500/30 ring-2 ring-white">
                     {user.name?.charAt(0).toUpperCase() || 'U'}
                   </div>
                 ) : (
@@ -115,11 +115,11 @@ export function Header() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.2 }}
-                    className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-coffee-200 py-2 z-50"
+                    className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-warm-lg border border-coffee-200 py-2 z-50 overflow-hidden"
                   >
                     {user ? (
                       <>
-                        <div className="px-4 py-3 border-b border-coffee-100">
+                        <div className="px-4 py-3 border-b border-coffee-100 bg-gradient-to-r from-coffee-50 to-coffee-100">
                           <p className="text-sm font-semibold text-coffee-800">{user.name}</p>
                           <p className="text-xs text-coffee-500">{user.email}</p>
                         </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -121,7 +121,7 @@ export default function HomePage() {
   if (!mounted) {
     return (
       <div className="min-h-screen">
-        <div className="h-[500px] bg-coffee-100 animate-pulse" />
+        <div className="h-[500px] animate-shimmer rounded-b-3xl" />
       </div>
     );
   }
@@ -134,7 +134,7 @@ export default function HomePage() {
           <div className="flex gap-6">
             {/* Left: Banner 1200x500 */}
             <div className="flex-1">
-              <div className="relative w-full h-[500px] rounded-2xl overflow-hidden shadow-lg">
+              <div className="relative w-full h-[500px] rounded-3xl overflow-hidden shadow-warm-lg ring-1 ring-coffee-200/60">
                 {banner.desktop ? (
                   <Image
                     src={banner.desktop}
@@ -146,10 +146,10 @@ export default function HomePage() {
                     quality={90}
                   />
                 ) : (
-                  <div className="absolute inset-0 bg-gradient-to-br from-coffee-600 via-coffee-700 to-coffee-800" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-coffee-600 via-coffee-700 to-coffee-900" />
                 )}
                 {/* Subtle gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
                 
                 {/* Text Content - Bottom Left */}
                 <div className="absolute bottom-0 left-0 right-0 p-6 lg:p-8">
@@ -158,6 +158,9 @@ export default function HomePage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6 }}
                   >
+                    <span className="inline-block text-coffee-300 text-xs font-semibold tracking-[0.2em] uppercase mb-2">
+                      Бөөний худалдаа
+                    </span>
                     <h1 className="text-2xl lg:text-3xl xl:text-4xl font-bold text-white mb-2 leading-tight drop-shadow-lg">
                       Чанартай <span className="text-coffee-300">цаасан аяга</span>
                     </h1>
@@ -192,7 +195,7 @@ export default function HomePage() {
               </div>
               
               {/* Slider Container */}
-              <div className="flex-1 relative bg-coffee-50 rounded-2xl p-4 shadow-sm border border-coffee-100">
+              <div className="flex-1 relative bg-gradient-to-b from-coffee-50 to-coffee-100 rounded-3xl p-4 shadow-warm border border-coffee-200/70">
                 <div className="relative h-[400px] overflow-hidden">
                   <AnimatePresence mode="wait">
                     <motion.div
@@ -214,15 +217,15 @@ export default function HomePage() {
                 <div className="absolute top-1/2 -translate-y-1/2 left-2 right-2 flex justify-between pointer-events-none">
                   <button
                     onClick={() => setDesktopSlide((prev) => (prev - 1 + featuredProducts.length) % featuredProducts.length)}
-                    className="pointer-events-auto w-8 h-8 rounded-full bg-white/90 shadow-md flex items-center justify-center hover:bg-white transition-colors"
+                    className="pointer-events-auto w-9 h-9 rounded-full bg-white/90 backdrop-blur shadow-warm flex items-center justify-center hover:bg-coffee-500 hover:text-white text-coffee-700 transition-all hover:scale-110"
                   >
-                    <ChevronLeft className="w-5 h-5 text-coffee-700" />
+                    <ChevronLeft className="w-5 h-5" />
                   </button>
                   <button
                     onClick={() => setDesktopSlide((prev) => (prev + 1) % featuredProducts.length)}
-                    className="pointer-events-auto w-8 h-8 rounded-full bg-white/90 shadow-md flex items-center justify-center hover:bg-white transition-colors"
+                    className="pointer-events-auto w-9 h-9 rounded-full bg-white/90 backdrop-blur shadow-warm flex items-center justify-center hover:bg-coffee-500 hover:text-white text-coffee-700 transition-all hover:scale-110"
                   >
-                    <ChevronRight className="w-5 h-5 text-coffee-700" />
+                    <ChevronRight className="w-5 h-5" />
                   </button>
                 </div>
 
@@ -311,14 +314,17 @@ export default function HomePage() {
       </section>
 
       {/* Text & Button Section - Mobile Only */}
-      <section className="md:hidden bg-cream-50 py-8 text-center">
+      <section className="md:hidden bg-gradient-to-b from-white to-coffee-100 py-10 text-center">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="container mx-auto px-4"
         >
+          <span className="inline-block text-coffee-500 text-xs font-semibold tracking-[0.2em] uppercase mb-2">
+            Бөөний худалдаа
+          </span>
           <h1 className="text-2xl font-bold text-coffee-800 mb-3">
-            Чанартай <span className="text-coffee-500">цаасан аяга</span>
+            Чанартай <span className="text-gradient-coffee">цаасан аяга</span>
           </h1>
           <p className="text-coffee-600 mb-4 max-w-lg mx-auto text-sm">
             Кафе, ресторанд зориулсан бүтээгдэхүүн
@@ -332,34 +338,6 @@ export default function HomePage() {
         </motion.div>
       </section>
 
-      {/* Features */}
-      <section className="py-8 bg-coffee-100 border-y border-coffee-200">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {features.map((feature, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                viewport={{ once: true }}
-                className="text-center"
-              >
-                <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-coffee-500 text-white mb-2">
-                  <feature.icon className="w-5 h-5" />
-                </div>
-                <h3 className="text-coffee-800 font-medium text-sm mb-1">
-                  {feature.title}
-                </h3>
-                <p className="text-coffee-600 text-xs">
-                  {feature.description}
-                </p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Categories */}
       <section id="categories" className="py-12">
         <div className="container mx-auto px-4">
@@ -367,11 +345,15 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-center mb-8"
+            className="text-center mb-10"
           >
+            <span className="inline-block text-coffee-500 text-xs font-semibold tracking-[0.2em] uppercase mb-2">
+              Дэлгүүр
+            </span>
             <h2 className="text-2xl md:text-3xl font-bold text-coffee-800 mb-2">
               Ангилалууд
             </h2>
+            <div className="w-14 h-1 bg-gradient-to-r from-coffee-400 to-coffee-600 rounded-full mx-auto mb-3" />
             <p className="text-coffee-600 text-sm">
               Хүссэн ангиллаасаа сонгоорой
             </p>
@@ -390,7 +372,7 @@ export default function HomePage() {
                   href={`/products?category=${category.id}`}
                   className="block group"
                 >
-                  <div className="relative aspect-square rounded-xl overflow-hidden bg-coffee-100 border border-coffee-200 hover:border-coffee-500 transition-all duration-300">
+                  <div className="relative aspect-square rounded-2xl overflow-hidden bg-coffee-100 border border-coffee-200 hover:border-coffee-400 transition-all duration-300 shadow-warm hover:shadow-warm-lg group-hover:-translate-y-1">
                     {categoryImages[category.id] ? (
                       <>
                         <Image
@@ -431,9 +413,13 @@ export default function HomePage() {
             viewport={{ once: true }}
             className="mb-6"
           >
-            <h2 className="text-2xl md:text-3xl font-bold text-coffee-800 mb-4">
+            <span className="inline-block text-coffee-500 text-xs font-semibold tracking-[0.2em] uppercase mb-1">
+              Бүрэн сонголт
+            </span>
+            <h2 className="text-2xl md:text-3xl font-bold text-coffee-800 mb-1">
               Бүх бүтээгдэхүүн
             </h2>
+            <div className="w-14 h-1 bg-gradient-to-r from-coffee-400 to-coffee-600 rounded-full mb-4" />
             <CategoryFilter
               selectedCategory={selectedCategory}
               onSelectCategory={setSelectedCategory}
@@ -443,7 +429,7 @@ export default function HomePage() {
           {loading ? (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[...Array(8)].map((_, i) => (
-                <div key={i} className="bg-coffee-100 rounded-2xl h-64 animate-pulse" />
+                <div key={i} className="animate-shimmer rounded-2xl h-64" />
               ))}
             </div>
           ) : filteredProducts.length === 0 ? (

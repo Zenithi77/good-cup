@@ -1,17 +1,26 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import { Header, Footer, ClientProviders } from "@/components/layout";
+import { Inter, Montserrat, JetBrains_Mono } from "next/font/google";
+import { Header, Footer, ClientProviders, IntroSplash } from "@/components/layout";
 import { FloatingCart } from "@/components/cart";
 import "./globals.css";
 
-const geistSans = Geist({
+const interSans = Inter({
   variable: "--font-geist-sans",
-  subsets: ["latin"],
+  subsets: ["latin", "cyrillic"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
+const montserratDisplay = Montserrat({
+  variable: "--font-display",
+  subsets: ["latin", "cyrillic"],
+  weight: ["500", "600", "700", "800"],
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
   variable: "--font-geist-mono",
-  subsets: ["latin"],
+  subsets: ["latin", "cyrillic"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -28,8 +37,9 @@ export default function RootLayout({
   return (
     <html lang="mn">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-coffee-950 text-coffee-100 min-h-screen flex flex-col`}
+        className={`${interSans.variable} ${montserratDisplay.variable} ${jetbrainsMono.variable} antialiased bg-coffee-950 text-coffee-100 min-h-screen flex flex-col`}
       >
+        <IntroSplash />
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />

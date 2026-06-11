@@ -109,12 +109,12 @@ export default function AdminDashboard() {
   }
 
   const statCards = [
-    { label: 'Нийт бүтээгдэхүүн', value: stats.totalProducts, icon: Package, color: 'bg-blue-500' },
-    { label: 'Нийт захиалга', value: stats.totalOrders, icon: ShoppingCart, color: 'bg-green-500' },
-    { label: 'Хүлээгдэж буй', value: stats.pendingOrders, icon: Clock, color: 'bg-orange-500' },
-    { label: 'Нийт хэрэглэгч', value: stats.totalUsers, icon: Users, color: 'bg-purple-500' },
-    { label: 'Өнөөдрийн захиалга', value: stats.todayOrders, icon: TrendingUp, color: 'bg-pink-500' },
-    { label: 'Нийт орлого', value: formatPrice(stats.totalRevenue), icon: DollarSign, color: 'bg-emerald-500' },
+    { label: 'Нийт бүтээгдэхүүн', value: stats.totalProducts, icon: Package, color: 'from-blue-500 to-blue-600', glow: 'shadow-blue-500/25' },
+    { label: 'Нийт захиалга', value: stats.totalOrders, icon: ShoppingCart, color: 'from-green-500 to-emerald-600', glow: 'shadow-green-500/25' },
+    { label: 'Хүлээгдэж буй', value: stats.pendingOrders, icon: Clock, color: 'from-orange-500 to-amber-600', glow: 'shadow-orange-500/25' },
+    { label: 'Нийт хэрэглэгч', value: stats.totalUsers, icon: Users, color: 'from-purple-500 to-violet-600', glow: 'shadow-purple-500/25' },
+    { label: 'Өнөөдрийн захиалга', value: stats.todayOrders, icon: TrendingUp, color: 'from-pink-500 to-rose-600', glow: 'shadow-pink-500/25' },
+    { label: 'Нийт орлого', value: formatPrice(stats.totalRevenue), icon: DollarSign, color: 'from-emerald-500 to-teal-600', glow: 'shadow-emerald-500/25' },
   ];
 
   const menuItems = [
@@ -135,8 +135,9 @@ export default function AdminDashboard() {
           <h1 className="text-2xl md:text-3xl font-bold text-coffee-100 mb-2">
             Админ хэсэг
           </h1>
+          <div className="w-14 h-1 bg-gradient-to-r from-coffee-400 to-coffee-600 rounded-full mb-3" />
           <p className="text-coffee-400">
-            Сайн байна уу, {user?.name}
+            Сайн байна уу, <span className="text-coffee-200 font-medium">{user?.name}</span>
           </p>
         </motion.div>
 
@@ -148,14 +149,18 @@ export default function AdminDashboard() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
-              className="bg-coffee-900 rounded-xl p-4 border border-coffee-800"
+              className="bg-coffee-900/80 backdrop-blur rounded-2xl p-4 border border-coffee-800 hover:border-coffee-600 hover:-translate-y-1 transition-all duration-300 group"
             >
-              <div className={`w-10 h-10 ${stat.color} rounded-lg flex items-center justify-center mb-3`}>
+              <div className={`w-10 h-10 bg-gradient-to-br ${stat.color} rounded-xl flex items-center justify-center mb-3 shadow-lg ${stat.glow} group-hover:scale-110 transition-transform duration-300`}>
                 <stat.icon className="w-5 h-5 text-white" />
               </div>
-              <p className="text-coffee-400 text-sm mb-1">{stat.label}</p>
+              <p className="text-coffee-400 text-xs uppercase tracking-wide mb-1">{stat.label}</p>
               <p className="text-coffee-100 text-xl font-bold">
-                {loadingStats ? '...' : stat.value}
+                {loadingStats ? (
+                  <span className="inline-block w-12 h-6 rounded bg-coffee-800 animate-pulse" />
+                ) : (
+                  stat.value
+                )}
               </p>
             </motion.div>
           ))}
@@ -171,13 +176,13 @@ export default function AdminDashboard() {
               transition={{ delay: 0.3 + index * 0.05 }}
             >
               <Link href={item.href}>
-                <div className="bg-coffee-900 rounded-xl p-6 border border-coffee-800 hover:border-coffee-600 hover:bg-coffee-800/50 transition-all duration-300 group">
+                <div className="bg-coffee-900/80 backdrop-blur rounded-2xl p-6 border border-coffee-800 hover:border-coffee-500/60 hover:bg-coffee-800/60 hover:-translate-y-1 transition-all duration-300 group">
                   <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-coffee-700 rounded-xl flex items-center justify-center group-hover:bg-coffee-600 transition-colors">
-                      <item.icon className="w-6 h-6 text-coffee-300" />
+                    <div className="w-12 h-12 bg-gradient-to-br from-coffee-600 to-coffee-800 rounded-2xl flex items-center justify-center group-hover:from-coffee-500 group-hover:to-coffee-700 shadow-lg shadow-coffee-900/40 group-hover:scale-110 transition-all duration-300">
+                      <item.icon className="w-6 h-6 text-coffee-200 group-hover:text-white transition-colors" />
                     </div>
                     <div>
-                      <h3 className="text-coffee-100 font-medium">{item.label}</h3>
+                      <h3 className="text-coffee-100 font-semibold">{item.label}</h3>
                       <p className="text-coffee-500 text-sm">{item.description}</p>
                     </div>
                   </div>
@@ -192,12 +197,12 @@ export default function AdminDashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="bg-coffee-900 rounded-xl border border-coffee-800 overflow-hidden"
+          className="bg-coffee-900/80 backdrop-blur rounded-2xl border border-coffee-800 overflow-hidden"
         >
-          <div className="p-6 border-b border-coffee-800">
+          <div className="p-6 border-b border-coffee-800 bg-gradient-to-r from-coffee-900 to-coffee-800/50">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-coffee-100">Сүүлийн захиалгууд</h2>
-              <Link href="/admin/orders" className="text-coffee-400 hover:text-coffee-200 text-sm">
+              <Link href="/admin/orders" className="text-coffee-400 hover:text-coffee-200 text-sm inline-flex items-center gap-1 hover:gap-2 transition-all">
                 Бүгдийг харах →
               </Link>
             </div>
@@ -213,20 +218,22 @@ export default function AdminDashboard() {
                 <div key={order.id} className="p-4 hover:bg-coffee-800/50 transition-colors">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-coffee-100 font-medium">
+                      <p className="text-coffee-100 font-medium font-mono text-sm">
                         #{order.paymentRef || order.id.slice(-6).toUpperCase()}
                       </p>
                       <p className="text-coffee-400 text-sm">{order.customerName}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-coffee-100 font-medium">
+                      <p className="text-coffee-100 font-semibold">
                         {formatPrice(order.total)}
                       </p>
-                      <p className={`text-sm ${
-                        order.paymentStatus === 'Paid' ? 'text-green-400' : 'text-orange-400'
+                      <span className={`inline-block text-xs px-2 py-0.5 rounded-full font-medium ${
+                        order.paymentStatus === 'Paid'
+                          ? 'bg-green-500/15 text-green-400 border border-green-500/30'
+                          : 'bg-orange-500/15 text-orange-400 border border-orange-500/30'
                       }`}>
                         {order.paymentStatus === 'Paid' ? 'Төлөгдсөн' : 'Хүлээгдэж буй'}
-                      </p>
+                      </span>
                     </div>
                   </div>
                 </div>

@@ -57,7 +57,7 @@ export function ProductCard({ product, variant = 'default' }: ProductCardProps) 
         transition={{ duration: 0.3 }}
       >
         <Link href={`/product/${product.id}`}>
-          <div className="group relative bg-white rounded-2xl overflow-hidden border border-coffee-200 shadow-lg">
+          <div className="group relative bg-white rounded-2xl overflow-hidden border border-coffee-200 shadow-warm-lg">
             {/* Image - Full Width, Top */}
             <div className="relative aspect-square overflow-hidden bg-coffee-100">
               <Image
@@ -121,7 +121,7 @@ export function ProductCard({ product, variant = 'default' }: ProductCardProps) 
       transition={{ duration: 0.3 }}
     >
       <Link href={`/product/${product.id}`}>
-        <div className="group relative bg-white rounded-2xl overflow-hidden border border-coffee-200 hover:border-coffee-500 transition-all duration-300 shadow-sm hover:shadow-lg">
+        <div className="group relative bg-white rounded-2xl overflow-hidden border border-coffee-200 hover:border-coffee-400 transition-all duration-300 shadow-warm hover:shadow-warm-lg">
           {/* Image */}
           <div className="relative aspect-square overflow-hidden bg-coffee-100">
             <Image
@@ -171,11 +171,11 @@ export function ProductCard({ product, variant = 'default' }: ProductCardProps) 
               </div>
               
               {product.stock > 0 ? (
-                <span className="text-xs text-green-400 bg-green-500/10 px-2 py-1 rounded-full">
+                <span className="text-xs font-medium text-green-600 bg-green-500/10 border border-green-500/20 px-2 py-1 rounded-full">
                   Бэлэн
                 </span>
               ) : (
-                <span className="text-xs text-red-400 bg-red-500/10 px-2 py-1 rounded-full">
+                <span className="text-xs font-medium text-red-600 bg-red-500/10 border border-red-500/20 px-2 py-1 rounded-full">
                   Дууссан
                 </span>
               )}
