@@ -30,8 +30,9 @@ const paymentStatusConfig = {
 
 export default function AdminOrdersPage() {
   const router = useRouter();
-  const { isAdmin, loading } = useAuthStore();
-  
+  const { isAdmin, isEmployee, loading } = useAuthStore();
+  const canManageOrders = isAdmin || isEmployee;
+
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -41,16 +42,16 @@ export default function AdminOrdersPage() {
   const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
-    if (!loading && !isAdmin) {
+    if (!loading && !canManageOrders) {
       router.push('/');
     }
-  }, [loading, isAdmin, router]);
+  }, [loading, canManageOrders, router]);
 
   useEffect(() => {
-    if (isAdmin) {
+    if (canManageOrders) {
       fetchOrders();
     }
-  }, [isAdmin]);
+  }, [canManageOrders]);
 
   const fetchOrders = async () => {
     try {
@@ -142,7 +143,7 @@ export default function AdminOrdersPage() {
     return matchesSearch && matchesStatus;
   });
 
-  if (loading || !isAdmin) {
+  if (loading || !canManageOrders) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-coffee-500"></div>

@@ -2,31 +2,34 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, UserCog, ShieldCheck, ShieldOff, Loader2 } from 'lucide-react';
+import { Search, UserCog, Loader2 } from 'lucide-react';
 import { collection, getDocs, updateDoc, doc, orderBy, query } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { User } from '@/types';
 import { useAuthStore } from '@/store/authStore';
-import { Input, Badge, Modal, Button, Select } from '@/components/ui';
+import { Input, Badge, Modal, Select } from '@/components/ui';
 import toast from 'react-hot-toast';
 
 export default function AdminUsersPage() {
   const router = useRouter();
-  const { isAdmin, loading, user: currentUser } = useAuthStore();
-  
+  const { isAdmin, isEmployee, loading, user: currentUser } = useAuthStore();
+
   const [users, setUsers] = useState<User[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [roleFilter, setRoleFilter] = useState<'all' | 'user' | 'admin' | 'guest'>('all');
+  const [roleFilter, setRoleFilter] = useState<'all' | 'user' | 'admin' | 'guest' | 'employee'>('all');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
-    if (!loading && !isAdmin) {
+    if (loading) return;
+    if (isEmployee) {
+      router.push('/admin/orders');
+    } else if (!isAdmin) {
       router.push('/');
     }
-  }, [loading, isAdmin, router]);
+  }, [loading, isAdmin, isEmployee, router]);
 
   useEffect(() => {
     if (isAdmin) {
@@ -54,28 +57,29 @@ export default function AdminUsersPage() {
     }
   };
 
-  const handleToggleAdmin = async (userId: string, makeAdmin: boolean) => {
+  const handleChangeRole = async (userId: string, newRole: 'user' | 'employee' | 'admin') => {
     if (userId === currentUser?.id) {
       toast.error('Өөрийн эрхийг өөрчлөх боломжгүй');
       return;
     }
-    
+
     setUpdating(true);
     try {
       await updateDoc(doc(db, 'users', userId), {
-        role: makeAdmin ? 'admin' : 'user',
+        role: newRole,
         updatedAt: new Date(),
       });
-      
-      setUsers(prev => prev.map(u => 
-        u.id === userId ? { ...u, role: makeAdmin ? 'admin' : 'user' } : u
+
+      setUsers(prev => prev.map(u =>
+        u.id === userId ? { ...u, role: newRole } : u
       ));
-      
+
       if (selectedUser?.id === userId) {
-        setSelectedUser(prev => prev ? { ...prev, role: makeAdmin ? 'admin' : 'user' } : null);
+        setSelectedUser(prev => prev ? { ...prev, role: newRole } : null);
       }
-      
-      toast.success(makeAdmin ? 'Админ эрх олголоо' : 'Админ эрхийг хасалаа');
+
+      const roleLabel = newRole === 'admin' ? 'Админ' : newRole === 'employee' ? 'Ажилтан' : 'Хэрэглэгч';
+      toast.success(`Эрхийг "${roleLabel}" болгож өөрчиллөө`);
     } catch {
       toast.error('Алдаа гарлаа');
     } finally {
@@ -99,6 +103,7 @@ export default function AdminUsersPage() {
 
   const guestCount = users.filter(u => u.role === 'guest').length;
   const registeredCount = users.filter(u => u.role === 'user').length;
+  const employeeCount = users.filter(u => u.role === 'employee').length;
   const adminCount = users.filter(u => u.role === 'admin').length;
 
   if (loading || !isAdmin) {
@@ -117,7 +122,7 @@ export default function AdminUsersPage() {
             Хэрэглэгч удирдах
           </h1>
           <p className="text-coffee-400">
-            Нийт {users.length} хэрэглэгч &middot; {registeredCount} бүртгэлтэй &middot; {guestCount} зочин &middot; {adminCount} админ
+            Нийт {users.length} хэрэглэгч &middot; {registeredCount} бүртгэлтэй &middot; {guestCount} зочин &middot; {employeeCount} ажилтан &middot; {adminCount} админ
           </p>
         </div>
 
@@ -140,6 +145,7 @@ export default function AdminUsersPage() {
                 { value: 'all', label: 'Бүх төрөл' },
                 { value: 'user', label: 'Бүртгэлтэй' },
                 { value: 'guest', label: 'Зочин' },
+                { value: 'employee', label: 'Ажилтан' },
                 { value: 'admin', label: 'Админ' },
               ]}
             />
@@ -190,6 +196,8 @@ export default function AdminUsersPage() {
                           variant={
                             user.role === 'admin'
                               ? 'success'
+                              : user.role === 'employee'
+                              ? 'info'
                               : user.role === 'guest'
                               ? 'warning'
                               : 'default'
@@ -197,6 +205,8 @@ export default function AdminUsersPage() {
                         >
                           {user.role === 'admin'
                             ? 'Админ'
+                            : user.role === 'employee'
+                            ? 'Ажилтан'
                             : user.role === 'guest'
                             ? 'Зочин'
                             : 'Хэрэглэгч'}
@@ -206,7 +216,7 @@ export default function AdminUsersPage() {
                         {user.createdAt?.toLocaleDateString('mn-MN')}
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex justify-end gap-2">
+                        <div className="flex justify-end items-center gap-2">
                           <button
                             onClick={() => viewUser(user)}
                             className="p-2 text-coffee-400 hover:text-coffee-100 hover:bg-coffee-700 rounded-lg transition-colors"
@@ -215,22 +225,18 @@ export default function AdminUsersPage() {
                             <UserCog className="w-4 h-4" />
                           </button>
                           {user.id !== currentUser?.id && (
-                            <button
-                              onClick={() => handleToggleAdmin(user.id, user.role !== 'admin')}
-                              disabled={updating}
-                              className={`p-2 rounded-lg transition-colors ${
-                                user.role === 'admin'
-                                  ? 'text-amber-400 hover:text-amber-300 hover:bg-amber-900/30'
-                                  : 'text-green-400 hover:text-green-300 hover:bg-green-900/30'
-                              }`}
-                              title={user.role === 'admin' ? 'Админ эрх хасах' : 'Админ эрх олгох'}
-                            >
-                              {user.role === 'admin' ? (
-                                <ShieldOff className="w-4 h-4" />
-                              ) : (
-                                <ShieldCheck className="w-4 h-4" />
-                              )}
-                            </button>
+                            <div className="w-32">
+                              <Select
+                                value={user.role === 'guest' ? 'user' : user.role}
+                                onChange={(e) => handleChangeRole(user.id, e.target.value as 'user' | 'employee' | 'admin')}
+                                disabled={updating}
+                                options={[
+                                  { value: 'user', label: 'Хэрэглэгч' },
+                                  { value: 'employee', label: 'Ажилтан' },
+                                  { value: 'admin', label: 'Админ' },
+                                ]}
+                              />
+                            </div>
                           )}
                         </div>
                       </td>
@@ -267,6 +273,8 @@ export default function AdminUsersPage() {
                     variant={
                       selectedUser.role === 'admin'
                         ? 'success'
+                        : selectedUser.role === 'employee'
+                        ? 'info'
                         : selectedUser.role === 'guest'
                         ? 'warning'
                         : 'default'
@@ -274,6 +282,8 @@ export default function AdminUsersPage() {
                   >
                     {selectedUser.role === 'admin'
                       ? 'Админ'
+                      : selectedUser.role === 'employee'
+                      ? 'Ажилтан'
                       : selectedUser.role === 'guest'
                       ? 'Зочин'
                       : 'Хэрэглэгч'}
@@ -309,26 +319,21 @@ export default function AdminUsersPage() {
               </div>
             </div>
 
-            {/* Admin Toggle */}
+            {/* Role Select */}
             {selectedUser.id !== currentUser?.id && (
               <div className="flex justify-end">
-                <Button
-                  onClick={() => handleToggleAdmin(selectedUser.id, selectedUser.role !== 'admin')}
-                  variant={selectedUser.role === 'admin' ? 'outline' : 'default'}
-                  disabled={updating}
-                >
-                  {selectedUser.role === 'admin' ? (
-                    <>
-                      <ShieldOff className="w-4 h-4 mr-2" />
-                      Админ эрх хасах
-                    </>
-                  ) : (
-                    <>
-                      <ShieldCheck className="w-4 h-4 mr-2" />
-                      Админ эрх олгох
-                    </>
-                  )}
-                </Button>
+                <div className="w-40">
+                  <Select
+                    value={selectedUser.role === 'guest' ? 'user' : selectedUser.role}
+                    onChange={(e) => handleChangeRole(selectedUser.id, e.target.value as 'user' | 'employee' | 'admin')}
+                    disabled={updating}
+                    options={[
+                      { value: 'user', label: 'Хэрэглэгч' },
+                      { value: 'employee', label: 'Ажилтан' },
+                      { value: 'admin', label: 'Админ' },
+                    ]}
+                  />
+                </div>
               </div>
             )}
           </div>

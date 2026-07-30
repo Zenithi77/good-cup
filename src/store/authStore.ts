@@ -21,6 +21,7 @@ interface AuthState {
   loading: boolean;
   error: string | null;
   isAdmin: boolean;
+  isEmployee: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signUp: (name: string, email: string, phone: string, password: string) => Promise<void>;
@@ -39,6 +40,7 @@ export const useAuthStore = create<AuthState>()(
       loading: true,
       error: null,
       isAdmin: false,
+      isEmployee: false,
 
       signIn: async (email: string, password: string) => {
         try {
@@ -51,11 +53,12 @@ export const useAuthStore = create<AuthState>()(
             const userData = userDoc.data() as User;
             const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
             const isAdminUser = email === adminEmail || userData.role === 'admin';
-            set({ 
-              user: userData, 
+            set({
+              user: userData,
               firebaseUser: userCredential.user,
               isAdmin: isAdminUser,
-              loading: false 
+              isEmployee: !isAdminUser && userData.role === 'employee',
+              loading: false
             });
           }
         } catch (error: unknown) {
@@ -80,11 +83,12 @@ export const useAuthStore = create<AuthState>()(
             const userData = userDoc.data() as User;
             const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
             const isAdminUser = firebaseUser.email === adminEmail || userData.role === 'admin';
-            set({ 
-              user: userData, 
+            set({
+              user: userData,
               firebaseUser: firebaseUser,
               isAdmin: isAdminUser,
-              loading: false 
+              isEmployee: !isAdminUser && userData.role === 'employee',
+              loading: false
             });
           } else {
             // New user - create their profile
@@ -150,7 +154,7 @@ export const useAuthStore = create<AuthState>()(
       signOut: async () => {
         try {
           await firebaseSignOut(auth);
-          set({ user: null, firebaseUser: null, isAdmin: false });
+          set({ user: null, firebaseUser: null, isAdmin: false, isEmployee: false });
         } catch (error: unknown) {
           const errorMessage = error instanceof Error ? error.message : 'Гарахад алдаа гарлаа';
           set({ error: errorMessage });
@@ -159,7 +163,8 @@ export const useAuthStore = create<AuthState>()(
 
       setUser: (user) => {
         const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-        set({ user, isAdmin: user?.email === adminEmail });
+        const isAdminUser = user?.email === adminEmail || user?.role === 'admin';
+        set({ user, isAdmin: isAdminUser, isEmployee: !isAdminUser && user?.role === 'employee' });
       },
       setFirebaseUser: (firebaseUser) => set({ firebaseUser }),
       setLoading: (loading) => set({ loading }),
@@ -167,7 +172,7 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'good-cup-auth',
-      partialize: (state) => ({ user: state.user, isAdmin: state.isAdmin }),
+      partialize: (state) => ({ user: state.user, isAdmin: state.isAdmin, isEmployee: state.isEmployee }),
     }
   )
 );
@@ -187,7 +192,7 @@ if (typeof window !== 'undefined') {
         const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
         const isAdminUser = firebaseUser.email === adminEmail || userData.role === 'admin';
         store.setUser(userData);
-        useAuthStore.setState({ isAdmin: isAdminUser });
+        useAuthStore.setState({ isAdmin: isAdminUser, isEmployee: !isAdminUser && userData.role === 'employee' });
       }
     } else {
       store.setUser(null);

@@ -13,7 +13,7 @@ import { Order } from '@/types';
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const { user, isAdmin, loading } = useAuthStore();
+  const { user, isAdmin, isEmployee, loading } = useAuthStore();
   
   const [stats, setStats] = useState({
     totalProducts: 0,
@@ -84,10 +84,13 @@ export default function AdminDashboard() {
   }, []);
 
   useEffect(() => {
-    if (!loading && !isAdmin) {
+    if (loading) return;
+    if (isEmployee) {
+      router.push('/admin/orders');
+    } else if (!isAdmin) {
       router.push('/');
     }
-  }, [loading, isAdmin, router]);
+  }, [loading, isAdmin, isEmployee, router]);
 
   useEffect(() => {
     if (isAdmin) {

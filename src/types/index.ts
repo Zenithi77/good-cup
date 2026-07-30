@@ -28,7 +28,7 @@ export interface User {
   name: string;
   email: string;
   phone: string;
-  role: 'user' | 'admin' | 'guest';
+  role: 'user' | 'admin' | 'guest' | 'employee';
   address?: string;
   district?: string;
   createdAt: Date;

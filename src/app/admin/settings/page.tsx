@@ -48,10 +48,10 @@ const defaultSettings: SiteSettings = {
 
 export default function AdminSettingsPage() {
   const router = useRouter();
-  const { isAdmin, loading } = useAuthStore();
+  const { isAdmin, isEmployee, loading } = useAuthStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mobileFileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const [settings, setSettings] = useState<SiteSettings>(defaultSettings);
   const [loadingSettings, setLoadingSettings] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -59,10 +59,13 @@ export default function AdminSettingsPage() {
   const [uploadingCategory, setUploadingCategory] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!loading && !isAdmin) {
+    if (loading) return;
+    if (isEmployee) {
+      router.push('/admin/orders');
+    } else if (!isAdmin) {
       router.push('/');
     }
-  }, [loading, isAdmin, router]);
+  }, [loading, isAdmin, isEmployee, router]);
 
   useEffect(() => {
     if (isAdmin) {

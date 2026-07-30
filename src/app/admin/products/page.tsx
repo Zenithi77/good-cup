@@ -42,8 +42,8 @@ const emptyProduct: FormProduct = {
 
 export default function AdminProductsPage() {
   const router = useRouter();
-  const { isAdmin, loading } = useAuthStore();
-  
+  const { isAdmin, isEmployee, loading } = useAuthStore();
+
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -54,10 +54,13 @@ export default function AdminProductsPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!loading && !isAdmin) {
+    if (loading) return;
+    if (isEmployee) {
+      router.push('/admin/orders');
+    } else if (!isAdmin) {
       router.push('/');
     }
-  }, [loading, isAdmin, router]);
+  }, [loading, isAdmin, isEmployee, router]);
 
   useEffect(() => {
     if (isAdmin) {

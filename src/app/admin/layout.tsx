@@ -21,13 +21,16 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { isAdmin, loading } = useAuthStore();
+  const { isAdmin, isEmployee, loading } = useAuthStore();
 
   useEffect(() => {
-    if (!loading && !isAdmin) {
+    if (loading) return;
+    if (!isAdmin && !isEmployee) {
       router.push('/');
+    } else if (isEmployee && pathname !== '/admin/orders') {
+      router.push('/admin/orders');
     }
-  }, [loading, isAdmin, router]);
+  }, [loading, isAdmin, isEmployee, pathname, router]);
 
   if (loading) {
     return (
@@ -37,9 +40,17 @@ export default function AdminLayout({
     );
   }
 
-  if (!isAdmin) {
+  if (!isAdmin && !isEmployee) {
     return null;
   }
+
+  if (isEmployee && pathname !== '/admin/orders') {
+    return null;
+  }
+
+  const visibleNav = isEmployee
+    ? adminNav.filter((item) => item.href === '/admin/orders')
+    : adminNav;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-coffee-950 to-coffee-900">
@@ -57,7 +68,7 @@ export default function AdminLayout({
             
             <div className="h-6 w-px bg-coffee-700" />
             
-            {adminNav.map((item) => {
+            {visibleNav.map((item) => {
               const isActive = pathname === item.href;
               return (
                 <Link
