@@ -14,7 +14,8 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { openCart, getItemCount } = useCartStore();
-  const { user, isAdmin, signOut } = useAuthStore();
+  const { user, isAdmin, isEmployee, signOut } = useAuthStore();
+  const adminHref = isAdmin ? '/admin' : '/admin/orders';
   const itemCount = getItemCount();
 
   // Close dropdown when clicking outside
@@ -59,9 +60,9 @@ export function Header() {
                 {link.label}
               </Link>
             ))}
-            {isAdmin && (
+            {(isAdmin || isEmployee) && (
               <Link
-                href="/admin"
+                href={adminHref}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
                   pathname.startsWith('/admin')
                     ? 'bg-gradient-to-b from-coffee-500 to-coffee-600 text-white shadow-md shadow-coffee-500/25'
@@ -69,7 +70,7 @@ export function Header() {
                 }`}
               >
                 <Settings className="w-4 h-4 inline mr-1" />
-                Админ
+                {isAdmin ? 'Админ' : 'Захиалга'}
               </Link>
             )}
           </nav>
@@ -142,16 +143,16 @@ export function Header() {
                           <span className="text-sm">Миний захиалсан бараа</span>
                         </Link>
 
-                        {isAdmin && (
+                        {(isAdmin || isEmployee) && (
                           <>
                             <div className="border-t border-coffee-100 my-1"></div>
                             <Link
-                              href="/admin"
+                              href={adminHref}
                               onClick={() => setUserDropdownOpen(false)}
                               className="flex items-center space-x-3 px-4 py-3 text-coffee-600 hover:bg-coffee-50 transition-colors"
                             >
                               <LayoutDashboard className="w-5 h-5" />
-                              <span className="text-sm font-medium">Админ хэсэг</span>
+                              <span className="text-sm font-medium">{isAdmin ? 'Админ хэсэг' : 'Захиалга удирдах'}</span>
                             </Link>
                           </>
                         )}
@@ -247,6 +248,20 @@ export function Header() {
                     >
                       <Settings className="w-4 h-4 mr-3" />
                       Бүтээгдэхүүн
+                    </Link>
+                  </div>
+                )}
+
+                {isEmployee && (
+                  <div className="pt-2 mt-2 border-t border-coffee-100">
+                    <p className="px-4 py-2 text-xs font-semibold text-coffee-400 uppercase tracking-wide">Ажилтан</p>
+                    <Link
+                      href="/admin/orders"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center px-4 py-3 rounded-lg text-sm font-medium text-coffee-600 hover:text-coffee-700 hover:bg-coffee-50"
+                    >
+                      <LayoutDashboard className="w-4 h-4 mr-3" />
+                      Захиалга
                     </Link>
                   </div>
                 )}
