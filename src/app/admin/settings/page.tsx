@@ -37,7 +37,7 @@ const defaultSettings: SiteSettings = {
   bannerTitle: 'GOOD CUP',
   bannerSubtitle: 'Чанартай таг аяга, савны төрөлжсөн дэлгүүр',
   categoryImages: {},
-  minimumOrderAmount: 200000,
+  minimumOrderAmount: 250000,
   deliveryFee: 5000,
   freeDeliveryMinimum: 300000,
   contactPhone: '',

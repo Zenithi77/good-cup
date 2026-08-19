@@ -79,4 +79,4 @@ export const BANK_ACCOUNTS = {
 };
 
 // Minimum order amount
-export const MINIMUM_ORDER_AMOUNT = 200000;
+export const MINIMUM_ORDER_AMOUNT = 250000;
